@@ -1,0 +1,12 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+data/corpus/
+data/openfoam-catalog/
+data/openfoam-memory/reports/
+runs/
+*.sqlite
+*.lance/
+.env
+experiment.local.json
+third_party/

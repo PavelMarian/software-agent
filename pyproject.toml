@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "software-multiagent"
+version = "0.1.0"
+description = "Standalone multi-agent runner for professional software environments"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2,<3",
+    "langchain-core>=0.3.78,<2",
+    "langgraph>=0.6.8,<2",
+]
+
+[project.optional-dependencies]
+foambench-evaluator = ["numpy>=1.24", "pyvista>=0.43"]
+providers = ["langchain-openai>=0.3.35,<2"]
+embeddings = ["lancedb>=0.17,<1"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+foambench = "foambench.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
