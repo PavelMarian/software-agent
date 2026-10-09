@@ -1,0 +1,13 @@
+{
+  "instance_id": "fixture__release_0.1_0.2",
+  "repo": "fixture/project",
+  "base_commit": "0000000000000000000000000000000000000000",
+  "start_version": "0.1.0",
+  "end_version": "0.2.0",
+  "problem_statement": "Implement two coordinated fixture workstreams.",
+  "workstreams": [
+    {"id": "api", "title": "API evolution", "description": "Change the fixture API."},
+    {"id": "runtime", "title": "Runtime behavior", "description": "Preserve runtime behavior."}
+  ],
+  "metadata": {"fixture_only": true}
+}

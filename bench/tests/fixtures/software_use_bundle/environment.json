@@ -1,0 +1,10 @@
+{
+  "backend_hint": "docker",
+  "image": null,
+  "workdir": "/workspace",
+  "platform": "linux/x86_64",
+  "timeout_seconds": 60,
+  "network_enabled": false,
+  "workspace_source": "bundle",
+  "seed_path": "workspace"
+}

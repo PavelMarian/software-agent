@@ -1,0 +1,7 @@
+name = "verifier"
+instructions = "Review the artifact independently and execute relevant target-software checks. If a concrete defect remains, send the executor an evidence-based repair request and call finish_phase with status needs_revision. Call finish_phase with status complete only when the artifact passes the available checks; use failed only for an unrecoverable verification blocker."
+
+[permissions]
+workspace = "read_only"
+tools = ["list", "read", "run", "message", "finish_phase"]
+communicate = true

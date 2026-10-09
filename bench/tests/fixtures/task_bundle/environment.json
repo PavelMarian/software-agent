@@ -1,0 +1,8 @@
+{
+  "backend_hint": "local-fixture",
+  "image": null,
+  "workdir": ".",
+  "platform": "local",
+  "timeout_seconds": 30,
+  "network_enabled": false
+}

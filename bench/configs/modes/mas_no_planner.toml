@@ -1,0 +1,22 @@
+id = "mas_no_planner"
+agent_topology = "multi_agent"
+budget_policy = "team_total"
+fair_comparison_group = "compute_matched_v1"
+communication_enabled = true
+independent_candidates = false
+supported = true
+max_turns_per_phase = 27
+phases = ["executor", "verifier", "executor"]
+
+[budget]
+token_limit = 120000
+wall_time_seconds = 3600
+tool_call_limit = 300
+
+[[roles]]
+id = "executor"
+profile = "executor"
+
+[[roles]]
+id = "verifier"
+profile = "verifier"

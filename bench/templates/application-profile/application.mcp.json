@@ -1,0 +1,45 @@
+{
+  "name": "manual-application",
+  "version": "1.0.0",
+  "description": "Hand-written workflow tools for one target application.",
+  "tools": [
+    {
+      "name": "application_inspect",
+      "description": "Inspect one workspace-relative application input.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "format": "workspace-path"
+          }
+        },
+        "required": ["path"],
+        "additionalProperties": false
+      },
+      "command": ["application-cli", "inspect", "{path}"],
+      "timeout_seconds": 60,
+      "mutating": false
+    },
+    {
+      "name": "application_run",
+      "description": "Run the application workflow for one workspace-relative input.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "format": "workspace-path"
+          }
+        },
+        "required": ["path"],
+        "additionalProperties": false
+      },
+      "command": ["application-cli", "run", "{path}"],
+      "timeout_seconds": 600,
+      "mutating": true
+    }
+  ]
+}

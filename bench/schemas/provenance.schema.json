@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://software-bench.local/schemas/provenance.schema.json",
+  "title": "Private TaskBundle provenance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source"],
+  "properties": {
+    "source": {"type": "string", "minLength": 1},
+    "source_id": {"type": ["string", "null"]},
+    "end_version_commit": {"type": "string"},
+    "gold_patch": {"type": "string"},
+    "prs": {"type": "array", "items": {"type": "object"}},
+    "metadata": {"type": "object"}
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://software-bench.local/schemas/prediction.schema.json",
+  "title": "Normalized model prediction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["instance_id", "model_name_or_path"],
+  "properties": {
+    "instance_id": {"type": "string", "minLength": 1},
+    "model_name_or_path": {"type": "string", "minLength": 1},
+    "model_patch": {"type": "string"},
+    "submission_kind": {
+      "enum": ["patch", "artifact_bundle", "environment_state", "workspace_files"]
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {"type": "string"},
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["encoding", "data", "sha256"],
+            "properties": {
+              "encoding": {"const": "base64"},
+              "data": {"type": "string"},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            }
+          }
+        ]
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {"type": "string"},
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["encoding", "data", "sha256"],
+            "properties": {
+              "encoding": {"const": "base64"},
+              "data": {"type": "string"},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            }
+          }
+        ]
+      }
+    },
+    "artifact_manifest": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "size"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "size": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  }
+}

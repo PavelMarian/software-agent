@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://software-bench.local/schemas/task.schema.json",
+  "title": "Public TaskBundle task specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["instance_id", "problem_statement"],
+  "properties": {
+    "instance_id": {"type": "string", "minLength": 1},
+    "task_kind": {"enum": ["software_evolution", "software_use"]},
+    "target_software": {"type": ["string", "null"]},
+    "repo": {"type": ["string", "null"]},
+    "base_commit": {"type": ["string", "null"]},
+    "start_version": {"type": ["string", "null"]},
+    "end_version": {"type": ["string", "null"]},
+    "problem_statement": {"type": "string", "minLength": 1},
+    "workstreams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "description"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "description": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "metadata": {"type": "object"}
+  },
+  "anyOf": [
+    {
+      "required": ["repo", "base_commit", "start_version", "end_version"],
+      "properties": {"task_kind": {"enum": ["software_evolution"]}}
+    },
+    {
+      "required": ["task_kind", "target_software"],
+      "properties": {
+        "task_kind": {"const": "software_use"},
+        "target_software": {"type": "string", "minLength": 1}
+      }
+    }
+  ]
+}

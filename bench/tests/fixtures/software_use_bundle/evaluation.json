@@ -1,0 +1,24 @@
+{
+  "strategy": "command_checks",
+  "submission_kind": "artifact_bundle",
+  "submission_root": "output",
+  "test_patch": "",
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "checks": [
+    {"id": "case_structure", "required": false, "weight": 0.2},
+    {"id": "solver_execution", "required": true, "weight": 0.4},
+    {"id": "numerical_accuracy", "required": true, "weight": 0.4}
+  ],
+  "test_commands": [
+    {
+      "id": "fixture-evaluator",
+      "command": ["python", ".benchmark/evaluate.py"],
+      "parser": "json-status",
+      "timeout_seconds": 30,
+      "shell": false
+    }
+  ],
+  "additional_oracles": [],
+  "evaluator_assets": "evaluator"
+}

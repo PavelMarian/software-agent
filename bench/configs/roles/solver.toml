@@ -1,0 +1,7 @@
+name = "solver"
+instructions = "Solve the complete task independently, including target-software execution and verification, without communicating with other candidates."
+
+[permissions]
+workspace = "read_write"
+tools = ["list", "read", "write", "run", "environment"]
+communicate = false

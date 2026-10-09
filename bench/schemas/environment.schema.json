@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://software-bench.local/schemas/environment.schema.json",
+  "title": "TaskBundle execution environment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["backend_hint", "image", "workdir", "platform", "timeout_seconds", "network_enabled"],
+  "properties": {
+    "backend_hint": {"type": "string", "minLength": 1},
+    "image": {"type": ["string", "null"]},
+    "workdir": {"type": "string", "minLength": 1},
+    "platform": {"type": "string", "minLength": 1},
+    "timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "network_enabled": {"type": "boolean"},
+    "workspace_source": {"enum": ["git", "bundle"]},
+    "seed_path": {"type": ["string", "null"]},
+    "shell_init": {"type": ["string", "null"]},
+    "pass_env": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"}
+    },
+    "backend_config": {"type": "object"}
+  }
+}

@@ -1,0 +1,16 @@
+id = "unrestricted_solo"
+agent_topology = "single_agent"
+budget_policy = "run_ceiling"
+communication_enabled = false
+independent_candidates = false
+supported = true
+phases = ["solo"]
+
+[budget]
+token_limit = 500000
+wall_time_seconds = 14400
+tool_call_limit = 1500
+
+[[roles]]
+id = "solo"
+profile = "solo"

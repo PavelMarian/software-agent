@@ -1,0 +1,18 @@
+id = "compute_matched_solo"
+agent_topology = "single_agent"
+budget_policy = "team_total"
+fair_comparison_group = "compute_matched_v1"
+communication_enabled = false
+independent_candidates = false
+supported = true
+max_turns_per_phase = 80
+phases = ["solo"]
+
+[budget]
+token_limit = 120000
+wall_time_seconds = 3600
+tool_call_limit = 300
+
+[[roles]]
+id = "solo"
+profile = "solo"

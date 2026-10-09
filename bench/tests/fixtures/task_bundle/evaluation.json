@@ -1,0 +1,24 @@
+{
+  "test_patch": "hidden test patch",
+  "FAIL_TO_PASS": ["feature_contract"],
+  "PASS_TO_PASS": ["regression_contract"],
+  "test_commands": [
+    {
+      "id": "fixture-tests",
+      "command": ["python", "-c", "import json; print(json.dumps({'feature_contract': 'PASSED', 'regression_contract': 'PASSED'}))"],
+      "parser": "json-status",
+      "timeout_seconds": 30,
+      "shell": false
+    }
+  ],
+  "additional_oracles": [
+    {
+      "id": "system_smoke",
+      "layer": "system",
+      "command": ["python", "-c", "raise SystemExit(0)"],
+      "timeout_seconds": 30,
+      "required": true,
+      "weight": 1.0
+    }
+  ]
+}

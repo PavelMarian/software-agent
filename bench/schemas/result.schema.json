@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://software-bench.local/schemas/result.schema.json",
+  "title": "Normalized benchmark evaluation result",
+  "type": "object",
+  "required": ["schema_version", "instance_id", "evaluation_backend", "resolved"],
+  "properties": {
+    "schema_version": {"enum": ["0.3.0", "0.4.0"]},
+    "instance_id": {"type": "string", "minLength": 1},
+    "evaluation_backend": {"enum": ["local-fixture", "docker"]},
+    "resolved": {"type": "boolean"},
+    "patch_exists": {"type": "boolean"},
+    "patch_applied": {"type": "boolean"},
+    "evaluation_strategy": {"enum": ["swe_patch", "command_checks"]},
+    "submission_exists": {"type": "boolean"},
+    "submission_applied": {"type": "boolean"},
+    "score": {"type": "number", "minimum": 0, "maximum": 1},
+    "checks": {"type": "array", "items": {"type": "object"}},
+    "fix_rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "raw_fix_rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "FAIL_TO_PASS": {"$ref": "#/$defs/testStatus"},
+    "PASS_TO_PASS": {
+      "allOf": [
+        {"$ref": "#/$defs/testStatus"},
+        {"type": "object", "required": ["regression_free"], "properties": {"regression_free": {"type": "boolean"}}}
+      ]
+    },
+    "additional_oracles": {"type": "array", "items": {"type": "object"}},
+    "test_commands": {"type": "array", "items": {"type": "object"}},
+    "infrastructure_error": {"type": ["string", "null"]}
+  },
+  "anyOf": [
+    {"required": ["patch_exists", "patch_applied", "fix_rate", "raw_fix_rate", "FAIL_TO_PASS", "PASS_TO_PASS"]},
+    {"required": ["evaluation_strategy", "submission_exists", "submission_applied", "score", "checks"]}
+  ],
+  "$defs": {
+    "testStatus": {
+      "type": "object",
+      "required": ["success", "failure"],
+      "properties": {
+        "success": {"type": "array", "items": {"type": "string"}},
+        "failure": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

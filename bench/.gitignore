@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+dist/
+build/
+repo-references/
+
+# Generated benchmark artifacts
+runs/*
+!runs/.gitkeep
+
+# Local secrets and overrides
+.env
+*.local.yaml

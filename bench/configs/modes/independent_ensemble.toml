@@ -1,0 +1,25 @@
+id = "independent_ensemble"
+agent_topology = "independent_ensemble"
+budget_policy = "team_total"
+fair_comparison_group = "compute_matched_v1"
+communication_enabled = false
+independent_candidates = true
+supported = false
+phases = ["solver_1", "solver_2", "solver_3"]
+
+[budget]
+token_limit = 120000
+wall_time_seconds = 3600
+tool_call_limit = 300
+
+[[roles]]
+id = "solver_1"
+profile = "solver"
+
+[[roles]]
+id = "solver_2"
+profile = "solver"
+
+[[roles]]
+id = "solver_3"
+profile = "solver"

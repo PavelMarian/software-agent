@@ -1,0 +1,19 @@
+{
+  "instance_id": "software_use__fixture__simulation",
+  "task_kind": "software_use",
+  "target_software": "OpenFOAM 10",
+  "problem_statement": "Create and validate the requested simulation artifact.",
+  "workstreams": [
+    {
+      "id": "setup",
+      "title": "Case setup",
+      "description": "Create OpenFOAM dictionaries."
+    },
+    {
+      "id": "run",
+      "title": "Execution",
+      "description": "Prepare the solver command."
+    }
+  ],
+  "metadata": {"fixture": true}
+}

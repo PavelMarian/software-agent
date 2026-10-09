@@ -1,0 +1,7 @@
+name = "solo"
+instructions = "Own the complete task: inspect the workspace, plan the work, create the artifact with the target software, and verify the result."
+
+[permissions]
+workspace = "read_write"
+tools = ["list", "read", "write", "run", "environment", "finish_phase"]
+communicate = false

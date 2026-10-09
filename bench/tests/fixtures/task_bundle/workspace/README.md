@@ -1,0 +1,3 @@
+# Fixture workspace
+
+Initial state.

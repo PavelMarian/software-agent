@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0",
+  "base_image": "mambaorg/micromamba:2.3.2",
+  "profiles": {
+    "blender": {
+      "image": "software-bench/blender:v1",
+      "conda_packages": [],
+      "apt_packages": ["blender"],
+      "executables": ["blender"],
+      "validator": "blender"
+    },
+    "energyplus": {
+      "image": "software-bench/energyplus:v1",
+      "dockerfile": "Dockerfile.energyplus",
+      "upstream_image": "nrel/energyplus:24.2.0",
+      "conda_packages": [],
+      "apt_packages": [],
+      "executables": ["energyplus", "ReadVarsESO", "python"],
+      "validator": "energyplus"
+    },
+    "freecad": {
+      "image": "software-bench/freecad:v1",
+      "conda_packages": ["freecad=1.0.*"],
+      "apt_packages": [],
+      "executables": ["FreeCADCmd"],
+      "validator": "freecad"
+    },
+    "gromacs": {
+      "image": "software-bench/gromacs:v1",
+      "conda_packages": ["gromacs=2025.*"],
+      "apt_packages": [],
+      "executables": ["gmx"],
+      "validator": "gromacs"
+    },
+    "kubernetes": {
+      "image": "software-bench/kubernetes:v1",
+      "conda_packages": ["kubernetes-client=1.34.*", "kubernetes-helm=3.19.*"],
+      "apt_packages": [],
+      "executables": ["kubectl", "helm"],
+      "validator": "kubernetes"
+    },
+    "lammps": {
+      "image": "software-bench/lammps:v1",
+      "conda_packages": ["lammps=2025.*"],
+      "apt_packages": [],
+      "executables": ["lmp"],
+      "validator": "lammps"
+    },
+    "modflow": {
+      "image": "software-bench/modflow6:v1",
+      "conda_packages": ["modflow6=6.7.*", "flopy=3.9.*"],
+      "apt_packages": [],
+      "executables": ["mf6", "python", "zbud6"],
+      "validator": "modflow"
+    },
+    "openmc": {
+      "image": "software-bench/openmc:v1",
+      "conda_packages": ["openmc=0.16.*"],
+      "apt_packages": [],
+      "executables": ["openmc", "python"],
+      "validator": "openmc"
+    },
+    "openfoam": {
+      "image": "software-bench/openfoam:v1",
+      "conda_packages": ["openfoam=2412"],
+      "apt_packages": [],
+      "executables": ["blockMesh", "checkMesh", "decomposePar", "foamDictionary", "foamListTimes", "foamToVTK", "postProcess", "potentialFoam", "reconstructPar"],
+      "validator": "openfoam"
+    },
+    "paraview": {
+      "image": "software-bench/paraview:v1",
+      "conda_packages": ["paraview=6.0.*"],
+      "apt_packages": [],
+      "executables": ["pvbatch", "pvpython"],
+      "validator": "paraview"
+    },
+    "qgis": {
+      "image": "software-bench/qgis:v1",
+      "conda_packages": ["qgis=3.40.*", "gdal=3.10.*"],
+      "apt_packages": [],
+      "executables": ["gdal_translate", "gdalbuildvrt", "gdalinfo", "gdal_rasterize", "gdalwarp", "ogr2ogr", "ogrinfo", "qgis_process"],
+      "validator": "qgis"
+    },
+    "quantum_espresso": {
+      "image": "software-bench/quantum-espresso:v1",
+      "conda_packages": ["qe=7.5"],
+      "apt_packages": [],
+      "executables": ["bands.x", "dos.x", "dynmat.x", "matdyn.x", "neb.x", "ph.x", "pp.x", "projwfc.x", "pw.x", "q2r.x"],
+      "validator": "quantum_espresso"
+    },
+    "spreadsheet": {
+      "image": "software-bench/spreadsheet:v1",
+      "conda_packages": ["openpyxl=3.1.*"],
+      "apt_packages": ["libreoffice-calc"],
+      "executables": ["libreoffice", "python"],
+      "validator": "spreadsheet"
+    },
+    "sqlite": {
+      "image": "software-bench/sqlite:v1",
+      "conda_packages": ["sqlite=3.50.*"],
+      "apt_packages": [],
+      "executables": ["python", "sqlite3"],
+      "validator": "sqlite"
+    },
+    "su2": {
+      "image": "software-bench/su2:v1",
+      "conda_packages": ["su2=8.5.*"],
+      "apt_packages": [],
+      "executables": ["SU2_CFD", "SU2_CFD_AD", "SU2_DEF", "SU2_DOT_AD", "SU2_GEO", "SU2_SOL", "python"],
+      "validator": "su2"
+    }
+  },
+  "variants": {
+    "database_suite": {
+      "image": "software-bench/database-suite:v1",
+      "dockerfile": "Dockerfile.python-suite",
+      "conda_packages": [],
+      "apt_packages": [],
+      "pip_packages": [
+        "duckdb==1.4.0",
+        "dbt-bigquery==1.10.2",
+        "dbt-core==1.10.13",
+        "dbt-duckdb==1.9.6",
+        "dbt-snowflake==1.10.3",
+        "google-cloud-bigquery==3.38.0",
+        "pandas==2.3.3",
+        "snowflake-connector-python==3.18.0",
+        "tqdm==4.67.1"
+      ],
+      "executables": ["python", "dbt"],
+      "profile": "sqlite"
+    }
+  }
+}
