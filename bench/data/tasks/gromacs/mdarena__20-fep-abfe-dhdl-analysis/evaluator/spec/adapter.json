@@ -1,0 +1,8 @@
+{
+  "source_task_id": "20_fep_abfe_dhdl_analysis",
+  "required": [
+    "abfe_summary.csv",
+    "analyze_abfe.py",
+    "final_answer.txt"
+  ]
+}

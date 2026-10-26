@@ -1,0 +1,104 @@
+"""Interface to the social network application from DeathStarBench"""
+
+import logging
+
+from sregym.generators.workload.wrk2 import Wrk2, Wrk2WorkloadManager
+from sregym.paths import SOCIAL_NETWORK_METADATA, TARGET_MICROSERVICES
+from sregym.service.apps.base import Application
+from sregym.service.apps.helpers import get_frontend_url
+from sregym.service.helm import Helm
+from sregym.service.kubectl import KubeCtl
+
+logger = logging.getLogger("all.sregym.social_network")
+logger.propagate = True
+logger.setLevel(logging.DEBUG)
+
+
+class SocialNetwork(Application):
+    def __init__(self):
+        super().__init__(SOCIAL_NETWORK_METADATA)
+        self.load_app_json()
+        self.kubectl = KubeCtl()
+        self.local_tls_path = TARGET_MICROSERVICES / "socialNetwork/helm-chart/socialnetwork"
+
+        self.payload_script = TARGET_MICROSERVICES / "socialNetwork/wrk2/scripts/social-network/mixed-workload.lua"
+
+    def load_app_json(self):
+        super().load_app_json()
+        metadata = self.get_app_json()
+        self.app_name = metadata["Name"]
+        self.description = metadata["Desc"]
+        self.frontend_service = metadata.get("frontend_service", "nginx-thrift")
+        self.frontend_port = metadata.get("frontend_port", 8080)
+
+    def create_tls_secret(self):
+        """Create TLS secret for MongoDB if it doesn't exist."""
+        check_sec = f"kubectl get secret mongodb-tls -n {self.namespace} --ignore-not-found -o name"
+        result = self.kubectl.exec_command(check_sec)
+
+        if result.strip() == "secret/mongodb-tls":
+            logger.debug("TLS secret already exists. Skipping creation.")
+            return
+
+        create_sec_command = (
+            f"kubectl create secret generic mongodb-tls "
+            f"--from-file=tls.pem={self.local_tls_path}/tls.pem "
+            f"--from-file=ca.crt={self.local_tls_path}/ca.crt "
+            f"-n {self.namespace}"
+        )
+        create_result = self.kubectl.exec_command(create_sec_command)
+        create_result_lower = create_result.lower()
+
+        if "created" in create_result_lower:
+            logger.debug(f"TLS secret created: {create_result.strip()}")
+        elif "already exists" in create_result_lower:
+            logger.debug("TLS secret already exists (confirmed during creation attempt).")
+        else:
+            logger.warning(f"TLS secret creation unexpected result: {create_result.strip()}")
+
+    def deploy(self):
+        """Deploy the same multiarch images on AMD64 and ARM64 nodes."""
+        self.create_namespace()
+        self.create_tls_secret()
+        Helm.install(**self.helm_configs)
+        Helm.assert_if_deployed(self.helm_configs["namespace"])
+
+    def delete(self):
+        """Delete the Helm configurations."""
+        Helm.uninstall(**self.helm_configs)
+
+    def cleanup(self):
+        """Delete the entire namespace for the social network application."""
+        Helm.uninstall(**self.helm_configs)
+
+        if hasattr(self, "wrk"):
+            # self.wrk.stop()
+            self.kubectl.delete_job(label="job=workload", namespace=self.namespace)
+        self.kubectl.delete_namespace(self.namespace)
+
+    def create_workload(
+        self, rate: int = 100, dist: str = "exp", connections: int = 3, duration: int = 10, threads: int = 3
+    ):
+        self.wrk = Wrk2WorkloadManager(
+            wrk=Wrk2(
+                rate=rate,
+                dist=dist,
+                connections=connections,
+                duration=duration,
+                threads=threads,
+                namespace=self.namespace,
+            ),
+            payload_script=self.payload_script,
+            url="{placeholder}/wrk2-api/post/compose",
+            namespace=self.namespace,
+        )
+
+    def start_workload(self):
+        if not hasattr(self, "wrk"):
+            self.create_workload()
+        self.wrk.url = get_frontend_url(self) + "/wrk2-api/post/compose"
+        self.wrk.start()
+
+    def stop_workload(self):
+        if hasattr(self, "wrk"):
+            self.wrk.stop()

@@ -1,0 +1,11 @@
+{
+  "end_version_commit": "",
+  "gold_patch": "",
+  "metadata": {
+    "dataset_sha256": "a001494767823be3d5b7bef7e4b31780a4beb4cec139050bd085a88f9772daa6",
+    "manifest_sha256": "a001494767823be3d5b7bef7e4b31780a4beb4cec139050bd085a88f9772daa6"
+  },
+  "prs": [],
+  "source": "xlang-ai/Spider2",
+  "source_id": "spider2__dbt__analytics_engineering001"
+}

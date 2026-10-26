@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "task_id": "workarena-l3__manage-change-request-schedule-tight-priority",
+  "entrypoints": {
+    "test_commands": [
+      {
+        "command": [
+          "python",
+          ".benchmark/application_evaluator.py",
+          "--profile",
+          "servicenow",
+          "--submission",
+          ".",
+          "--validation",
+          ".benchmark/spec/validation.json"
+        ],
+        "id": "application-validator",
+        "parser": "json-status",
+        "shell": false,
+        "timeout_seconds": 1800.0
+      }
+    ],
+    "additional_oracles": [
+      {
+        "id": "workarena-source-validator",
+        "layer": "system",
+        "command": [
+          "python",
+          ".benchmark/workarena_source_oracle.py",
+          "--source-class",
+          "browsergym.workarena.tasks.compositional.manage_change_request_schedule.ManageChangeRequestScheduleTask",
+          "--submission",
+          "."
+        ],
+        "timeout_seconds": 1800.0,
+        "required": true,
+        "weight": 1.0
+      }
+    ]
+  },
+  "layout": {
+    "spec": "declarative task-specific evaluator configuration",
+    "reference": "hidden deterministic reference assets when available",
+    "upstream": "vendored upstream verifier code or evaluation suite"
+  },
+  "layers": [
+    {
+      "id": "command",
+      "checks": [
+        "artifact_structure",
+        "native_validation"
+      ],
+      "implementation": [
+        "python",
+        ".benchmark/application_evaluator.py",
+        "--profile",
+        "servicenow",
+        "--submission",
+        ".",
+        "--validation",
+        ".benchmark/spec/validation.json"
+      ]
+    },
+    {
+      "id": "system",
+      "oracles": [
+        "workarena-source-validator"
+      ]
+    }
+  ],
+  "readiness": "runtime_verification_required",
+  "limitations": []
+}

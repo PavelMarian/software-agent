@@ -1,0 +1,339 @@
+"""
+Gemini CLI agent implementation for SREGym.
+Based on Harbor's Gemini CLI agent implementation for parity experiments.
+"""
+
+import json
+import logging
+import os
+import shlex
+import shutil
+import subprocess
+import tempfile
+from datetime import datetime
+from pathlib import Path
+
+from clients.harness.token_usage import aggregate_usage, read_jsonl, sum_counts, token_count, usage_metrics
+
+logger = logging.getLogger("all.geminicli.agent")
+
+
+class GeminiCliAgent:
+    """
+    The Gemini CLI agent uses Google's Gemini CLI tool to solve tasks.
+
+    This implementation closely mirrors Harbor's Gemini CLI agent for parity experiments.
+    """
+
+    _OUTPUT_FILENAME = "gemini-cli.txt"
+
+    @staticmethod
+    def check_installation() -> bool:
+        """Check if Gemini CLI is installed."""
+        return shutil.which("gemini") is not None
+
+    @staticmethod
+    def ensure_installed(auto_install: bool = True) -> None:
+        """
+        Ensure Gemini CLI is installed, optionally attempting installation.
+
+        Args:
+            auto_install: If True, attempt to install gemini if not found
+
+        Raises:
+            RuntimeError: If gemini is not installed and auto_install fails
+        """
+        if GeminiCliAgent.check_installation():
+            logger.info("Gemini CLI is already installed")
+            return
+
+        logger.warning("Gemini CLI not found in PATH")
+
+        if not auto_install:
+            raise RuntimeError(
+                "Gemini CLI is not installed. Please install it using:\n"
+                "  npm install -g @google/gemini-cli\n"
+                "Or visit: https://github.com/google-gemini/gemini-cli"
+            )
+
+        logger.info("Attempting to install Gemini CLI via npm...")
+        try:
+            subprocess.check_call(
+                ["npm", "install", "-g", "@google/gemini-cli"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            logger.info("Successfully installed Gemini CLI")
+
+            if not GeminiCliAgent.check_installation():
+                raise RuntimeError("Gemini CLI installation appeared to succeed but command is still not available")
+
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            error_msg = f"Failed to auto-install Gemini CLI: {e}\n"
+            if isinstance(e, FileNotFoundError):
+                error_msg += "npm is not installed. Please install Node.js and npm first.\n"
+            error_msg += (
+                "Please install Gemini CLI manually using:\n"
+                "  npm install -g @google/gemini-cli\n"
+                "Or visit: https://github.com/google-gemini/gemini-cli"
+            )
+            raise RuntimeError(error_msg) from e
+
+    def __init__(
+        self,
+        logs_dir: Path,
+        model_name: str,
+        gemini_home: Path | None = None,
+    ):
+        """
+        Initialize the Gemini CLI agent.
+
+        Args:
+            logs_dir: Directory to store logs and output
+            model_name: Model name to use (e.g., "gemini-2.0-flash")
+            gemini_home: Directory for Gemini configuration (defaults to ~/.gemini)
+        """
+        self.logs_dir = Path(logs_dir)
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+
+        self.model_name = model_name
+        self.gemini_home = Path(gemini_home) if gemini_home else Path.home() / ".gemini"
+
+        logger.info(f"Initialized Gemini CLI agent with model={model_name}")
+        logger.info(f"Logs dir: {self.logs_dir}")
+        logger.info(f"Gemini home: {self.gemini_home}")
+
+    @property
+    def output_path(self) -> Path:
+        """Path to Gemini CLI output file."""
+        return self.logs_dir / self._OUTPUT_FILENAME
+
+    @property
+    def sessions_dir(self) -> Path:
+        """Path to sessions directory."""
+        return self.logs_dir / "sessions"
+
+    def _find_session_file(self) -> Path | None:
+        """Find the most recent Gemini session file.
+
+        Gemini CLI writes sessions under ``~/.gemini/tmp/<hash>/chats/`` as
+        ``session-*.json`` (older) or ``session-*.jsonl`` (v0.40+). Search both
+        extensions and fall back to a recursive scan, matching Harbor's copy
+        step — the narrow ``*/chats/*.json`` glob alone misses newer JSONL
+        sessions and any layout change.
+        """
+        tmp_dir = self.gemini_home / "tmp"
+        if not tmp_dir.exists():
+            return None
+
+        session_files = [p for pat in ("session-*.json", "session-*.jsonl") for p in tmp_dir.rglob(pat)]
+        if not session_files:
+            return None
+
+        # Return the most recently modified session file
+        return max(session_files, key=lambda p: p.stat().st_mtime)
+
+    def _archive_session(self) -> Path | None:
+        """Archive the Gemini session file to sessions directory."""
+        session_file = self._find_session_file()
+        if not session_file or not session_file.exists():
+            logger.warning("No session file found to copy")
+            return None
+
+        try:
+            # Save to sessions directory with date structure (like Codex/OpenCode)
+            now = datetime.now()
+            session_subdir = self.sessions_dir / str(now.year) / f"{now.month:02d}" / f"{now.day:02d}"
+            session_subdir.mkdir(parents=True, exist_ok=True)
+
+            # Extract session ID from filename (session-2026-02-04T16-12-e580aecd.json -> e580aecd)
+            session_id = session_file.stem.split("-")[-1] if "-" in session_file.stem else session_file.stem
+            # Preserve the real extension (.json or .jsonl); the ATIF adapter
+            # handles both shapes.
+            archived_path = session_subdir / f"session-{session_id}{session_file.suffix}"
+            shutil.copy(session_file, archived_path)
+            logger.info(f"Archived session to {archived_path}")
+
+            return archived_path
+        except Exception as e:
+            logger.warning(f"Could not copy session file: {e}")
+            return None
+
+    def get_usage_metrics(self) -> dict[str, int | None]:
+        """Read inclusive totals from the native JSON or JSONL session."""
+        session_file = self._find_session_file()
+        if not session_file or not session_file.exists():
+            return usage_metrics()
+
+        try:
+            trajectory = json.loads(session_file.read_text())
+            messages = trajectory.get("messages", []) if isinstance(trajectory, dict) else []
+        except json.JSONDecodeError:
+            messages = self._usage_messages(session_file)
+        except OSError as error:
+            logger.warning("Could not read Gemini usage: %s", error)
+            return usage_metrics()
+
+        records = []
+        for message in messages:
+            if not isinstance(message, dict):
+                continue
+            tokens = message.get("tokens")
+            if message.get("type") != "gemini" or not isinstance(tokens, dict):
+                continue
+            reasoning = token_count(tokens.get("thoughts"))
+            # `tool` is toolUsePromptTokenCount: tool results sent as input.
+            records.append(
+                usage_metrics(
+                    input_tokens=sum_counts([token_count(tokens.get("input")), token_count(tokens.get("tool"))]),
+                    output_tokens=sum_counts([token_count(tokens.get("output")), reasoning]),
+                    cached_input_tokens=token_count(tokens.get("cached")),
+                    reasoning_output_tokens=reasoning,
+                )
+            )
+        return aggregate_usage(records)
+
+    @staticmethod
+    def _usage_messages(session_file: Path) -> list[dict]:
+        """Replay usage updates by message ID without importing the converter."""
+        messages = {}
+        pending = {}
+        for record in read_jsonl(session_file):
+            if "$rewindTo" in record:
+                ids = list(messages)
+                target = record["$rewindTo"]
+                removed = ids[ids.index(target) :] if target in messages else ids
+                for message_id in removed:
+                    messages.pop(message_id, None)
+                    pending.pop(message_id, None)
+                continue
+            message_id = record.get("id")
+            if not isinstance(message_id, str):
+                continue
+            if record.get("type") in {"gemini", "user"}:
+                message = messages.setdefault(message_id, {})
+                message.update(record)
+                if message_id in pending:
+                    message.setdefault("tokens", {}).update(pending.pop(message_id))
+            elif record.get("type") == "message_update" and isinstance(record.get("tokens"), dict):
+                if message_id in messages:
+                    messages[message_id].setdefault("tokens", {}).update(record["tokens"])
+                else:
+                    pending.setdefault(message_id, {}).update(record["tokens"])
+        return list(messages.values())
+
+    def _build_command(self, instruction: str) -> str:
+        model = self.model_name.split("/")[-1]
+        escaped_instruction = shlex.quote(instruction)
+        return f"gemini -p {escaped_instruction} -y -m {model}"
+
+    def _prepare_filtered_settings(self) -> Path | None:
+        """Create a per-run Gemini settings file for provider-side tool blocking."""
+        if os.environ.get("AGENT_INTERNET_ACCESS") != "filtered":
+            return None
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            prefix="gemini-system-settings-",
+            suffix=".json",
+            dir=self.logs_dir,
+            delete=False,
+        ) as settings_file:
+            json.dump(
+                {"tools": {"exclude": ["google_web_search", "web_fetch", "browser_agent"]}},
+                settings_file,
+            )
+            return Path(settings_file.name)
+
+    def run(self, instruction: str) -> int:
+        """
+        Run the Gemini CLI agent with the given instruction.
+
+        Args:
+            instruction: The task instruction to pass to Gemini CLI
+
+        Returns:
+            Return code from Gemini CLI execution (0 for success)
+        """
+        # Extract model name (remove provider prefix if present)
+        model = self.model_name.split("/")[-1]
+
+        logger.info(f"Running Gemini CLI with instruction: {instruction}")
+        logger.info(f"Using model: {model}")
+
+        # Build environment variables
+        env = os.environ.copy()
+
+        # Headless/automated runs: the working dir isn't interactively "trusted",
+        # which otherwise downgrades approval mode and blocks tool calls. This is
+        # the documented env var for headless environments.
+        env["GEMINI_CLI_TRUST_WORKSPACE"] = "true"
+
+        # Auth environment variables
+        auth_vars = [
+            "GEMINI_API_KEY",
+            "GOOGLE_APPLICATION_CREDENTIALS",
+            "GOOGLE_CLOUD_PROJECT",
+            "GOOGLE_CLOUD_LOCATION",
+            "GOOGLE_GENAI_USE_VERTEXAI",
+            "GOOGLE_API_KEY",
+        ]
+
+        has_auth = False
+        for var in auth_vars:
+            if var in os.environ:
+                env[var] = os.environ[var]
+                has_auth = True
+
+        if not has_auth:
+            logger.error("=" * 80)
+            logger.error("ERROR: No Google/Gemini API authentication found")
+            logger.error("Please set one of the following environment variables:")
+            logger.error("  - GEMINI_API_KEY")
+            logger.error("  - GOOGLE_API_KEY")
+            logger.error("  - GOOGLE_APPLICATION_CREDENTIALS (for service account)")
+            logger.error("=" * 80)
+            return 1
+
+        command = self._build_command(instruction)
+        filtered_settings = self._prepare_filtered_settings()
+        if filtered_settings is not None:
+            env["GEMINI_CLI_SYSTEM_SETTINGS_PATH"] = str(filtered_settings)
+
+        logger.info(f"Executing command: {command}")
+
+        try:
+            with open(self.output_path, "w") as out_file:
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    stdin=subprocess.DEVNULL,
+                    env=env,
+                    text=True,
+                    bufsize=1,
+                )
+
+                if process.stdout:
+                    for line in process.stdout:
+                        out_file.write(line)
+                        out_file.flush()
+                        print(line, end="", flush=True)
+
+                process.wait()
+
+            logger.info(f"Gemini CLI finished with return code: {process.returncode}")
+
+            # Archive session file after execution
+            self._archive_session()
+
+            return process.returncode
+
+        except Exception as e:
+            logger.error(f"Error running Gemini CLI: {e}")
+            raise
+        finally:
+            if filtered_settings is not None:
+                filtered_settings.unlink(missing_ok=True)

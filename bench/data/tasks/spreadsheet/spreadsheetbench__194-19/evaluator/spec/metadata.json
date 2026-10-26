@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "case_1",
+      "input": "1_194-19_input.xlsx",
+      "answer": "1_194-19_answer.xlsx",
+      "answer_position": "'Sheet1'!H1:I370"
+    },
+    {
+      "id": "case_2",
+      "input": "2_194-19_input.xlsx",
+      "answer": "2_194-19_answer.xlsx",
+      "answer_position": "'Sheet1'!H1:I370"
+    },
+    {
+      "id": "case_3",
+      "input": "3_194-19_input.xlsx",
+      "answer": "3_194-19_answer.xlsx",
+      "answer_position": "'Sheet1'!H1:I370"
+    }
+  ]
+}

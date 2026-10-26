@@ -1,0 +1,59 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "spreadsheetbench__13-1",
+  "metadata": {
+    "environment_profile": "spreadsheet",
+    "instruction_type": "Sheet-Level Manipulation",
+    "mcp_profile": "spreadsheet",
+    "source_id": "13-1",
+    "test_case_count": 3,
+    "complexity_profile": {
+      "schema_version": "1.0",
+      "method": "mcp_profile_static_baseline",
+      "confidence": "medium",
+      "scale": "ordinal_1_to_5",
+      "mcp_profile": "spreadsheet",
+      "execution": {
+        "minimum_workflow_steps": 5,
+        "tool_chain_depth": 3,
+        "relevant_tool_count": 4,
+        "tool_category_count": 2,
+        "state_entity_count": 4,
+        "domain_concept_load": 3,
+        "workflow_branching": 2,
+        "verification_layers": 3,
+        "irreversibility_risk": "medium"
+      },
+      "coordination": {
+        "minimum_handoffs": 1,
+        "cross_role_dependency_count": 1,
+        "independent_verification_need": 2
+      }
+    },
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 4,
+        "dependency_depth": 4,
+        "state_representations": 4,
+        "constraint_interaction": 5,
+        "diagnosis_or_strategy_choice": 4,
+        "independent_validation": 5,
+        "coordination_potential": 4
+      },
+      "evidence": [
+        "Pinned source-distinct task: 13-1.",
+        "Public seed contains 4 files across 2 state formats: .md, .xlsx.",
+        "Independent evaluator exposes 1 native command(s), 0 semantic assertion(s), and 0 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "How can I combine data from a 'RANGES' sheet to a 'LISTS' sheet, by matching duplicates based on the 'DATE' and 'REF' columns in columns B and C, and add a 'TOTAL' row to sum up the amounts? Additionally, since new ranges with headers will be added to the 'RANGES' sheet, how do I ensure to delete the old ranges in the 'LISTS' sheet before populating the new data? I have given the correct answer of the \"STAGE\" table in the \"LISTS\" table as a format reference, please help me complete the other answers.\n\nThis is the pinned, source-distinct case `13-1`. Audit workbook structure, formulas, named ranges, formats, hidden sheets, and all public variants. Design a reusable transformation, reconcile repeated keys and missing data, preserve undeclared formulas and formatting, recalculate in the target application, diagnose discrepancies, and verify calculated values, formulas, and hidden regions. First audit the supplied inputs and outputs; then plan dependency order before mutating state. After execution, inspect every intermediate and final artifact, repair failed invariants without discarding provenance, and finally run independent application-native and hidden semantic checks. Place only verified deliverables under output/.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "Python, openpyxl, and LibreOffice Calc",
+  "task_kind": "software_use"
+}

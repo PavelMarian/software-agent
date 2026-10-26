@@ -1,0 +1,6 @@
+{
+  "policy": "prefer the originating benchmark oracle; adaptations may only bridge TaskBundle paths or replace unavailable GUI fixtures with native semantic invariants",
+  "upstream": "ParaView regression tests",
+  "source": "Clients/ParaView/Testing/Python/TestColorHistogram.py",
+  "reuse": "native pvpython semantic assertions derived from the upstream workflow; image-baseline fixtures unavailable in the bundle are not claimed as exact comparisons"
+}

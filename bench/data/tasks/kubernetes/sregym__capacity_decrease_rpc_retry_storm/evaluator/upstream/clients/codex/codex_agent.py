@@ -1,0 +1,432 @@
+"""
+Codex agent implementation for SREGym.
+Based on Harbor's Codex agent implementation for parity experiments.
+"""
+
+import json
+import logging
+import os
+import shutil
+import subprocess
+import sys
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any
+
+from clients.harness.token_usage import read_jsonl, token_count, usage_metrics
+from clients.jev.config import codex_args as jev_codex_args
+
+logger = logging.getLogger("all.codex.agent")
+
+_CUSTOM_PROVIDER_ID = "sregym_custom"
+
+
+def custom_provider_args(env: Mapping[str, str] | None = None) -> list[str]:
+    """Build Codex CLI overrides for an OpenAI Responses-compatible endpoint."""
+    source = os.environ if env is None else env
+    api_base = source.get("AGENT_API_BASE", "").strip()
+    if not api_base:
+        return []
+
+    if not source.get("AGENT_API_KEY", "").strip():
+        raise RuntimeError("AGENT_API_KEY is required when AGENT_API_BASE configures Codex")
+
+    # json.dumps emits a quoted string that is valid TOML and safely escapes the
+    # endpoint without placing the credential itself on the command line.
+    return [
+        "-c",
+        f"model_provider={json.dumps(_CUSTOM_PROVIDER_ID)}",
+        "-c",
+        f"model_providers.{_CUSTOM_PROVIDER_ID}.name={json.dumps('SREGym custom endpoint')}",
+        "-c",
+        f"model_providers.{_CUSTOM_PROVIDER_ID}.base_url={json.dumps(api_base)}",
+        "-c",
+        f"model_providers.{_CUSTOM_PROVIDER_ID}.env_key={json.dumps('AGENT_API_KEY')}",
+        "-c",
+        f"model_providers.{_CUSTOM_PROVIDER_ID}.wire_api={json.dumps('responses')}",
+        "-c",
+        f"model_providers.{_CUSTOM_PROVIDER_ID}.requires_openai_auth=false",
+        # Namespace tools are supported by OpenAI's Responses API but cannot be
+        # represented by the Chat Completions bridge used by Z.ai. Keep Codex's
+        # regular function tools while suppressing its multi-agent namespace.
+        "-c",
+        "features.multi_agent=false",
+    ]
+
+
+def filtered_runtime_args(env: Mapping[str, str] | None = None) -> list[str]:
+    """Disable provider-hosted network tools during filtered runs."""
+    source = os.environ if env is None else env
+    if source.get("AGENT_INTERNET_ACCESS") != "filtered":
+        return []
+    return ["-c", 'web_search="disabled"', "--disable", "apps", "--disable", "plugins"]
+
+
+class CodexAgent:
+    """
+    The Codex agent uses OpenAI's Codex CLI tool to solve tasks.
+
+    This implementation closely mirrors Harbor's Codex agent for parity experiments.
+    """
+
+    _OUTPUT_FILENAME = "codex.txt"
+
+    @staticmethod
+    def check_installation() -> bool:
+        """
+        Check if Codex CLI is installed.
+
+        Returns:
+            True if codex is available, False otherwise
+        """
+        return shutil.which("codex") is not None
+
+    @staticmethod
+    def ensure_installed(auto_install: bool = True) -> None:
+        """
+        Ensure Codex CLI is installed, optionally attempting installation.
+
+        Args:
+            auto_install: If True, attempt to install codex if not found
+
+        Raises:
+            RuntimeError: If codex is not installed and auto_install fails
+        """
+        if CodexAgent.check_installation():
+            logger.info("Codex CLI is already installed")
+            return
+
+        logger.warning("Codex CLI not found in PATH")
+
+        if not auto_install:
+            raise RuntimeError(
+                "Codex CLI is not installed. Please install it using:\n"
+                "  pip install codex-cli\n"
+                "Or visit: https://github.com/anthropics/codex"
+            )
+
+        # Attempt auto-installation
+        logger.info("Attempting to install Codex CLI via pip...")
+        try:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "codex-cli"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            logger.info("Successfully installed Codex CLI")
+
+            # Verify installation
+            if not CodexAgent.check_installation():
+                raise RuntimeError("Codex CLI installation appeared to succeed but command is still not available")
+
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"Failed to auto-install Codex CLI: {e}\n"
+                "Please install it manually using:\n"
+                "  pip install codex-cli\n"
+                "Or visit: https://github.com/anthropics/codex"
+            ) from e
+
+    def __init__(
+        self,
+        logs_dir: Path,
+        model_name: str,
+        codex_home: Path | None = None,
+    ):
+        """
+        Initialize the Codex agent.
+
+        Args:
+            logs_dir: Directory to store logs and output
+            model_name: Model name to use (e.g., "claude-sonnet-4-5")
+            codex_home: Directory for Codex configuration (defaults to logs_dir)
+        """
+        self.logs_dir = Path(logs_dir)
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+
+        self.model_name = model_name
+        self.codex_home = Path(codex_home) if codex_home else self.logs_dir
+        self.codex_home.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"Initialized Codex agent with model={model_name}")
+        logger.info(f"Logs dir: {self.logs_dir}")
+        logger.info(f"Codex home: {self.codex_home}")
+
+    @property
+    def output_path(self) -> Path:
+        """Path to Codex output file."""
+        return self.logs_dir / self._OUTPUT_FILENAME
+
+    @property
+    def trajectory_path(self) -> Path:
+        """Path to trajectory JSON file."""
+        return self.logs_dir / "trajectory.json"
+
+    @staticmethod
+    def _extract_message_text(content: list[Any]) -> str:
+        """Extract joined text from Codex content blocks."""
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, dict):
+                text = block.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "".join(parts)
+
+    @staticmethod
+    def _parse_output_blob(raw: Any) -> tuple[str | None, dict[str, Any] | None]:
+        """Extract textual output and metadata from Codex tool outputs."""
+        if raw is None:
+            return None, None
+
+        if isinstance(raw, str):
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                return raw, None
+        else:
+            parsed = raw
+
+        if isinstance(parsed, dict):
+            output = parsed.get("output")
+            if output is None and parsed:
+                # dumping remaining structure if output missing
+                output = json.dumps(parsed, ensure_ascii=False)
+            metadata = parsed.get("metadata")
+            return output, metadata if isinstance(metadata, dict) else None
+
+        return str(parsed), None
+
+    def get_usage_metrics(self) -> dict[str, int | None]:
+        """Read cumulative session usage, with CLI output as a fallback."""
+        output = list(read_jsonl(self.output_path)) if self.output_path.exists() else []
+        thread_id = next((event.get("thread_id") for event in output if event.get("type") == "thread.started"), None)
+        sessions = list((self.logs_dir / "sessions").rglob("*.jsonl"))
+        if thread_id:
+            sessions = [path for path in sessions if thread_id in path.name]
+
+        usage = None
+        # An ambiguous directory can include other sessions. Do not count them.
+        if len(sessions) == 1:
+            for event in read_jsonl(sessions[0]):
+                payload = event.get("payload") or {}
+                if (
+                    event.get("type") != "event_msg"
+                    or not isinstance(payload, dict)
+                    or payload.get("type") != "token_count"
+                ):
+                    continue
+                info = payload.get("info")
+                if not isinstance(info, dict):
+                    continue
+                total = info.get("total_token_usage")
+                if isinstance(total, dict):
+                    usage = total
+        if usage is None:
+            usage = next((event["usage"] for event in reversed(output) if isinstance(event.get("usage"), dict)), {})
+
+        # Codex totals already contain cache hits and reasoning.
+        return usage_metrics(
+            input_tokens=token_count(usage.get("input_tokens")),
+            output_tokens=token_count(usage.get("output_tokens")),
+            cached_input_tokens=token_count(usage.get("cached_input_tokens")),
+            reasoning_output_tokens=token_count(usage.get("reasoning_output_tokens")),
+        )
+
+    def _setup_auth(self) -> bool:
+        """Set up authentication for Codex.
+
+        Uses the custom provider credential when AGENT_API_BASE is set. Otherwise,
+        checks subscription credentials first (mounted ~/.codex/auth.json), then
+        falls back to OPENAI_API_KEY.
+
+        Returns:
+            True if an OpenAI auth file was created; False for subscription or
+            custom-provider auth.
+        """
+        if os.environ.get("AGENT_API_BASE", "").strip():
+            custom_provider_args()
+            logger.info("Using AGENT_API_KEY with the configured Codex endpoint")
+            return False
+
+        # Prefer subscription auth (OAuth tokens in mounted ~/.codex)
+        mounted_auth = Path("/root/.codex/auth.json")
+        if mounted_auth.exists():
+            logger.info("Using subscription credentials from /root/.codex/auth.json")
+            return False
+
+        # Fall back to API key
+        api_key = os.environ.get("OPENAI_API_KEY", "")
+        if api_key:
+            auth_file = self.codex_home / "auth.json"
+            auth_data = {"OPENAI_API_KEY": api_key}
+            with open(auth_file, "w") as f:
+                json.dump(auth_data, f)
+            logger.info(f"Created auth file at {auth_file}")
+            return True
+
+        logger.warning("No subscription auth file and no OPENAI_API_KEY found")
+        return False
+
+    def _cleanup_auth(self) -> None:
+        """Remove auth.json file after execution."""
+        auth_file = self.codex_home / "auth.json"
+        if auth_file.exists():
+            auth_file.unlink()
+            logger.info(f"Removed auth file at {auth_file}")
+
+    def generate_trajectory(self, problem_id: str, output_dir: Path | None = None) -> "Path | None":
+        """
+        Convert the codex.txt output file to a stratus JSONL trajectory
+        readable by the SREGym visualizer (visualizer/process.py).
+
+        Args:
+            problem_id:  SREGym problem identifier.
+            output_dir:  Directory for the trajectory file (defaults to logs_dir/trajectory).
+
+        Returns:
+            Path to the generated JSONL file, or None if conversion failed.
+        """
+        from datetime import datetime
+
+        # Load converter directly from its file so no __init__.py or sys.path tricks needed.
+        converter_file = Path(__file__).resolve().parents[2] / "visualizer" / "converters" / "codex_to_trajectory.py"
+        if not converter_file.exists():
+            logger.warning(f"Converter not found: {converter_file}")
+            return None
+
+        try:
+            import importlib.util
+
+            spec = importlib.util.spec_from_file_location("codex_to_trajectory", converter_file)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            convert = mod.convert
+        except Exception as exc:
+            logger.warning(f"Could not load codex_to_trajectory: {exc}")
+            return None
+
+        if not self.output_path.exists():
+            logger.warning(f"Codex output file not found: {self.output_path}")
+            return None
+
+        traj_dir = Path(output_dir) if output_dir else self.logs_dir / "trajectory"
+        traj_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%m%d_%H%M")
+        traj_file = traj_dir / f"{timestamp}_{problem_id}_codex_agent_trajectory.jsonl"
+
+        try:
+            return convert(
+                input_path=self.output_path,
+                output_path=traj_file,
+                problem_id=problem_id,
+            )
+        except Exception as exc:
+            logger.error(f"Trajectory conversion failed: {exc}")
+            return None
+
+    def _build_command(self, instruction: str) -> list[str]:
+        """Build the Codex command, preserving the CLI's default effort when unset."""
+        model = self.model_name.split("/")[-1]
+        command = [
+            "codex",
+            "exec",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "--skip-git-repo-check",
+            "--model",
+            model,
+            "--json",
+            "-c",
+            'model_reasoning_summary="detailed"',
+            "--enable",
+            "unified_exec",
+        ]
+        command.extend(custom_provider_args())
+        command.extend(filtered_runtime_args())
+        command.extend(jev_codex_args(self.logs_dir))
+        reasoning_effort = os.environ.get("AGENT_REASONING_EFFORT")
+        if reasoning_effort:
+            command.extend(["-c", f"model_reasoning_effort={reasoning_effort}"])
+        command.extend(["--", instruction])
+        return command
+
+    def run(self, instruction: str) -> int:
+        """
+        Run the Codex agent with the given instruction.
+
+        Args:
+            instruction: The task instruction to pass to Codex
+
+        Returns:
+            Return code from Codex execution (0 for success)
+        """
+        # Extract model name (remove provider prefix if present)
+        model = self.model_name.split("/")[-1]
+        reasoning_effort = os.environ.get("AGENT_REASONING_EFFORT")
+
+        logger.info(f"Running Codex with instruction: {instruction}")
+        logger.info(f"Using model: {model}")
+        logger.info(f"Using reasoning effort: {reasoning_effort or 'Codex default'}")
+
+        # Setup authentication
+        using_custom_provider = bool(os.environ.get("AGENT_API_BASE", "").strip())
+        using_api_key = self._setup_auth()
+        env = os.environ.copy()
+
+        try:
+            command = self._build_command(instruction)
+
+            logger.info(f"Executing command: {' '.join(command)}")
+
+            # Set environment variables
+            if using_custom_provider or using_api_key:
+                # Keep provider-specific state and API-key auth in the run directory.
+                env["CODEX_HOME"] = str(self.codex_home)
+            else:
+                # For subscription auth, use the mounted ~/.codex dir so the CLI finds
+                # the cached OAuth credentials. Remove OPENAI_API_KEY so the CLI
+                # doesn't try to use an empty/invalid key instead of OAuth.
+                env["CODEX_HOME"] = "/root/.codex"
+                env.pop("OPENAI_API_KEY", None)
+
+            # Run Codex and capture output
+            with open(self.output_path, "w") as out_file:
+                process = subprocess.Popen(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    stdin=subprocess.DEVNULL,
+                    env=env,
+                    text=True,
+                    bufsize=1,
+                )
+
+                # Stream output to both file and logger
+                for line in process.stdout:
+                    out_file.write(line)
+                    out_file.flush()
+                    # Also log to console (strip to avoid double newlines)
+                    print(line, end="", flush=True)
+
+                process.wait()
+
+            logger.info(f"Codex finished with return code: {process.returncode}")
+            return process.returncode
+
+        finally:
+            # Copy session files into the run dir
+            try:
+                session_src = Path(env.get("CODEX_HOME", "")) / "sessions"
+                session_dst = self.logs_dir / "sessions"
+                if session_src.is_dir() and session_src.resolve() != session_dst.resolve():
+                    if session_dst.exists():
+                        shutil.rmtree(session_dst)
+                    shutil.copytree(session_src, session_dst)
+                    logger.info(f"Copied codex sessions from {session_src} to {session_dst}")
+            except Exception as exc:
+                logger.warning(f"Failed to copy codex sessions: {exc}")
+
+            # Only cleanup auth file if we created one (API key auth)
+            if using_api_key:
+                self._cleanup_auth()

@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "case_1",
+      "input": "1_102-20_input.xlsx",
+      "answer": "1_102-20_answer.xlsx",
+      "answer_position": "'Raw Data'!B2:I40"
+    },
+    {
+      "id": "case_2",
+      "input": "2_102-20_input.xlsx",
+      "answer": "2_102-20_answer.xlsx",
+      "answer_position": "'Raw Data'!B2:I40"
+    },
+    {
+      "id": "case_3",
+      "input": "3_102-20_input.xlsx",
+      "answer": "3_102-20_answer.xlsx",
+      "answer_position": "'Raw Data'!B2:I40"
+    }
+  ]
+}

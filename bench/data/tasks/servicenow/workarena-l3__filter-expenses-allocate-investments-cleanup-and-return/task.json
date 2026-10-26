@@ -1,0 +1,16 @@
+{
+  "instance_id": "workarena-l3__filter-expenses-allocate-investments-cleanup-and-return",
+  "problem_statement": "L3 setting: the agent starts on a private ServiceNow task page that only references a company protocol; the procedure must be retrieved from the instance's Knowledge Base article and applied to records created for this instance (see class docstring and setup in source).",
+  "target_software": "servicenow",
+  "task_kind": "software_use",
+  "repo": null,
+  "base_commit": null,
+  "start_version": null,
+  "end_version": null,
+  "metadata": {
+    "environment_profile": "servicenow",
+    "source_id": "workarena-l3__filter-expenses-allocate-investments-cleanup-and-return",
+    "source_class": "browsergym.workarena.tasks.compositional.maximize_investment_return.FilterExpensesAndAllocateInvestmentsTask",
+    "variant": "answer_format=cleanup_and_return; mode=random"
+  }
+}

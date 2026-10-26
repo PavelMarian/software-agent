@@ -1,0 +1,9 @@
+{
+  "required_paths": [
+    "pipeline.pvsm",
+    "histogram.csv",
+    "selected.csv",
+    "histogram.png",
+    "selection.png"
+  ]
+}

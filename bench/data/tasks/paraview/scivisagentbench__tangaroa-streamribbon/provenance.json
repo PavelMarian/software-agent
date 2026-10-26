@@ -1,0 +1,15 @@
+{
+  "source": "SciVisAgentBench",
+  "source_id": "tangaroa_streamribbon",
+  "end_version_commit": "b9435d13e9ff979226b1754e6c467efeb026978a",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "upstream": "https://huggingface.co/datasets/SciVisAgentBench/SciVisAgentBench-tasks",
+    "revision": "b9435d13e9ff979226b1754e6c467efeb026978a",
+    "source_hashes": {
+      "task_description.txt": "512a1825078e8f0cbd9dbeff2d3d0f6233a782b62e252183cb7b60896658e3f1",
+      "tangaroa_streamribbon_300x180x120_float32_scalar3.raw": "52066e6f74e8322bb00961bf4c30073a2453ea248e20d14786008c659be5ecfc"
+    }
+  }
+}

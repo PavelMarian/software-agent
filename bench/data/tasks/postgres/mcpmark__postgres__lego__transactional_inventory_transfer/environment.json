@@ -1,0 +1,21 @@
+{
+  "backend_config": {
+    "requires": "disposable isolated PostgreSQL initialized using MCPMark source dataset and preparation"
+  },
+  "backend_hint": "managed",
+  "image": null,
+  "network_enabled": true,
+  "pass_env": [
+    "POSTGRES_HOST",
+    "POSTGRES_PORT",
+    "POSTGRES_DATABASE",
+    "POSTGRES_USERNAME",
+    "POSTGRES_PASSWORD"
+  ],
+  "platform": "linux/x86_64",
+  "seed_path": "workspace",
+  "shell_init": null,
+  "timeout_seconds": 1800.0,
+  "workdir": "/workspace",
+  "workspace_source": "bundle"
+}

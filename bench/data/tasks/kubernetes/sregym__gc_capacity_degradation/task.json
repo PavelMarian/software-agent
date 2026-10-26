@@ -1,0 +1,15 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "sregym__gc_capacity_degradation",
+  "metadata": {
+    "live": true,
+    "mcp_profile": "kubernetes",
+    "source_id": "gc_capacity_degradation"
+  },
+  "problem_statement": "An incident is occurring in a live Kubernetes deployment of a microservice application. Stage 1 (diagnosis): investigate and submit a natural-language root-cause diagnosis. Stage 2 (mitigation): repair the system and submit when mitigation is complete. The agent is not told the fault; it observes only the running system.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "Kubernetes, kubectl, Helm, and the live SREGym environment",
+  "task_kind": "software_use"
+}

@@ -1,0 +1,54 @@
+"""MongoDB revoke authentication problem in the HotelReservation application."""
+
+from sregym.conductor.oracles.llm_as_a_judge.llm_as_a_judge_oracle import LLMAsAJudgeOracle
+from sregym.conductor.oracles.mitigation import MitigationOracle
+from sregym.conductor.problems.base import Problem
+from sregym.generators.fault.inject_app import ApplicationFaultInjector
+from sregym.paths import TARGET_MICROSERVICES
+from sregym.service.apps.hotel_reservation import HotelReservation
+from sregym.service.kubectl import KubeCtl
+from sregym.utils.decorators import mark_fault_injected
+
+
+class MongoDBRevokeAuth(Problem):
+    """Revoke admin privileges in MongoDB — the agent must diagnose auth failure without seeing the scripts."""
+
+    def __init__(self, faulty_service: str = "mongodb-geo"):
+        super().__init__(app=HotelReservation(mount_failure_scripts=False))
+        self.kubectl = KubeCtl()
+        self.faulty_service = faulty_service
+        self.root_cause = self.build_structured_root_cause(
+            component=f"service/{self.faulty_service}-db",
+            namespace=self.namespace,
+            description=(
+                f"Database access for {self.faulty_service} is explicitly revoked, so the service can start but fails on "
+                "database-backed operations due to authorization errors from MongoDB."
+            ),
+        )
+        # NOTE: change the faulty service to mongodb-rate to create another scenario
+        # self.faulty_service = "mongodb-rate"
+        self.app.payload_script = (
+            TARGET_MICROSERVICES / "hotelReservation/wrk2/scripts/hotel-reservation/mixed-workload_type_1.lua"
+        )
+        # === Attach evaluation oracles ===
+        self.diagnosis_oracle = LLMAsAJudgeOracle(problem=self, expected=self.root_cause)
+
+        self.app.create_workload()
+        self.mitigation_oracle = MitigationOracle(problem=self)
+
+    @mark_fault_injected
+    def inject_fault(self):
+        print("== Fault Injection ==")
+        injector = ApplicationFaultInjector(namespace=self.namespace)
+        injector._inject(
+            fault_type="revoke_auth",
+            microservices=[self.faulty_service],
+        )
+        print(f"Service: {self.faulty_service} | Namespace: {self.namespace}\n")
+
+    @mark_fault_injected
+    def recover_fault(self):
+        print("== Fault Recovery ==")
+        injector = ApplicationFaultInjector(namespace=self.namespace)
+        injector._recover(fault_type="revoke_auth", microservices=[self.faulty_service])
+        print(f"Service: {self.faulty_service} | Namespace: {self.namespace}\n")

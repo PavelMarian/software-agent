@@ -1,0 +1,13 @@
+{
+  "end_version_commit": "",
+  "gold_patch": "",
+  "metadata": {
+    "source_task_id": "Clients/PythonCatalyst/Testing/WaveletHistogramExtracts.xml",
+    "upstream": "ParaView",
+    "upstream_commit": "799b56e5304a7fbe2b18263328310707f64e6aa0",
+    "adaptation": "Batch-compatible reconstruction of the public temporal multiview extractor regression workflow; no golden implementation is supplied to the agent."
+  },
+  "prs": [],
+  "source": "ParaView public regression test",
+  "source_id": "paraview-wavelet-histogram-extracts"
+}

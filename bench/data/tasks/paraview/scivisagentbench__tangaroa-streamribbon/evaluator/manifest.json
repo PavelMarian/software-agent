@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "task_id": "scivisagentbench__tangaroa-streamribbon",
+  "entrypoints": {
+    "test_commands": [
+      {
+        "command": [
+          "python3",
+          ".benchmark/oracle_adapter.py"
+        ],
+        "id": "upstream-adapted-oracle",
+        "parser": "json-status",
+        "shell": false,
+        "timeout_seconds": 3600
+      }
+    ],
+    "additional_oracles": []
+  },
+  "layout": {
+    "spec": "declarative task-specific evaluator configuration",
+    "reference": "hidden deterministic reference assets when available",
+    "upstream": "vendored upstream verifier code or evaluation suite"
+  },
+  "layers": [
+    {
+      "id": "command",
+      "checks": [
+        "rendered_image",
+        "reloadable_state",
+        "streamline_to_ribbon_pipeline",
+        "seed_and_width_parameters"
+      ],
+      "implementation": [
+        "python3",
+        ".benchmark/oracle_adapter.py"
+      ]
+    }
+  ],
+  "readiness": "runtime_verification_required",
+  "limitations": []
+}

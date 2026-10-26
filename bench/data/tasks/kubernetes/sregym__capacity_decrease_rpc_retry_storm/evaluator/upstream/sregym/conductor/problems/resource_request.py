@@ -1,0 +1,108 @@
+import copy
+from abc import abstractmethod
+
+from sregym.conductor.oracles.llm_as_a_judge.llm_as_a_judge_oracle import LLMAsAJudgeOracle
+from sregym.conductor.oracles.mitigation import MitigationOracle
+from sregym.conductor.problems.base import Problem
+from sregym.generators.fault.inject_virtual import VirtualizationFaultInjector
+from sregym.service.apps.astronomy_shop import AstronomyShop
+from sregym.service.apps.hotel_reservation import HotelReservation
+from sregym.service.apps.social_network import SocialNetwork
+from sregym.service.kubectl import KubeCtl
+from sregym.utils.decorators import mark_fault_injected
+
+
+class ResourceRequest(Problem):
+    def __init__(self, app_name: str = "hotel_reservation", faulty_service: str = "frontend"):
+        self.app_name = app_name
+        self.faulty_service = faulty_service
+
+        if self.app_name == "hotel_reservation":
+            app = HotelReservation()
+        elif self.app_name == "social_network":
+            app = SocialNetwork()
+        elif self.app_name == "astronomy_shop":
+            app = AstronomyShop()
+        else:
+            raise ValueError(f"Unsupported app_name: {app_name}")
+
+        super().__init__(app=app)
+        self.kubectl = KubeCtl()
+        # Note: root_cause will be set in subclasses (ResourceRequestTooLarge/ResourceRequestTooSmall)
+        # diagnosis_oracle will be set in subclasses after root_cause is set
+        self.app.create_workload()
+        self.mitigation_oracle = MitigationOracle(problem=self)
+
+    @mark_fault_injected
+    def inject_fault(self):
+        print("== Fault Injection ==")
+        injector = VirtualizationFaultInjector(namespace=self.namespace)
+        injector._inject(
+            fault_type="resource_request",
+            microservices=[self.faulty_service],
+            duration=self.set_memory_limit,  # Not a duration
+        )
+        print(f"Service: {self.faulty_service} | Namespace: {self.namespace}\n")
+
+    @mark_fault_injected
+    def recover_fault(self):
+        print("== Fault Recovery ==")
+        injector = VirtualizationFaultInjector(namespace=self.namespace)
+        injector._recover(
+            fault_type="resource_request",
+            microservices=[self.faulty_service],
+        )
+        print(f"Service: {self.faulty_service} | Namespace: {self.namespace}\n")
+
+    @abstractmethod
+    def set_memory_limit(self, deployment_yaml) -> dict:
+        pass
+
+
+class ResourceRequestTooLarge(ResourceRequest):
+    """Deprecated in SREGym 1.1 after reaching 100% overall pass@3."""
+
+    def __init__(self, app_name: str = "hotel_reservation", faulty_service: str = "frontend"):
+        super().__init__(app_name, faulty_service)
+        self.root_cause = self.build_structured_root_cause(
+            component=self.faulty_service,
+            namespace=self.namespace,
+            description=(
+                f"Deployment `{self.faulty_service}` requests more memory than any available node can satisfy, so the "
+                "scheduler cannot place new pods. Pods remain Pending with insufficient-memory scheduling events instead "
+                "of becoming Ready. Users experience reduced capacity and request failures as replicas cannot scale or recover."
+            ),
+        )
+        self.diagnosis_oracle = LLMAsAJudgeOracle(problem=self, expected=self.root_cause)
+
+    def set_memory_limit(self, deployment_yaml):
+        dyaml = copy.deepcopy(deployment_yaml)
+        upper_limit = self.kubectl.get_node_memory_capacity()
+        new_limit = self.kubectl.format_k8s_memory((upper_limit + 100 * 1024) * 2)
+        dyaml["spec"]["template"]["spec"]["containers"][0]["resources"]["requests"]["memory"] = new_limit
+        print(f"Setting memory request to {new_limit} for {self.faulty_service}")
+        return dyaml
+
+
+class ResourceRequestTooSmall(ResourceRequest):
+    def __init__(self, app_name: str = "hotel_reservation", faulty_service: str = "frontend"):
+        super().__init__(app_name, faulty_service)
+        self.root_cause = self.build_structured_root_cause(
+            component=self.faulty_service,
+            namespace=self.namespace,
+            description=(
+                f"Deployment `{self.faulty_service}` has an extremely low memory limit (`10Mi`), so normal runtime usage "
+                "quickly exceeds cgroup limits and triggers OOM kills. Pods restart repeatedly and exhibit unstable uptime "
+                "with CrashLoop-like behavior under ordinary traffic. Users observe intermittent outages, latency spikes, and failed requests."
+            ),
+        )
+        self.diagnosis_oracle = LLMAsAJudgeOracle(problem=self, expected=self.root_cause)
+
+    def set_memory_limit(self, deployment_yaml):
+        dyaml = copy.deepcopy(deployment_yaml)
+        new_limit = "10Mi"
+        dyaml["spec"]["template"]["spec"]["containers"][0]["resources"].setdefault("limits", dict())["memory"] = (
+            new_limit
+        )
+        print(f"Setting memory limit to {new_limit} for {self.faulty_service}")
+        return dyaml

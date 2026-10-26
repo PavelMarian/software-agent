@@ -1,0 +1,76 @@
+from sregym.conductor.oracles.duplicate_pvc_mounts_mitigation import DuplicatePVCMountsMitigationOracle
+from sregym.conductor.oracles.llm_as_a_judge.llm_as_a_judge_oracle import LLMAsAJudgeOracle
+from sregym.conductor.problems.base import Problem
+from sregym.generators.fault.inject_virtual import VirtualizationFaultInjector
+from sregym.service.apps.astronomy_shop import AstronomyShop
+from sregym.service.apps.hotel_reservation import HotelReservation
+from sregym.service.apps.social_network import SocialNetwork
+from sregym.service.kubectl import KubeCtl
+from sregym.utils.decorators import mark_fault_injected
+
+
+class DuplicatePVCMounts(Problem):
+    """Model duplicate PVC mounts across applications.
+
+    The ``duplicate_pvc_mounts_astronomy_shop`` configuration is deprecated in
+    SREGym 1.1 after reaching 100% overall pass@3.
+    """
+
+    def __init__(self, app_name: str = "hotel_reservation", faulty_service: str = "mongodb-rate"):
+        self.app_name = app_name
+        self.faulty_service = faulty_service
+
+        if self.app_name == "hotel_reservation":
+            app = HotelReservation()
+        elif self.app_name == "social_network":
+            app = SocialNetwork()
+        elif self.app_name == "astronomy_shop":
+            app = AstronomyShop()
+        else:
+            raise ValueError(f"Unsupported app name: {app_name}")
+
+        super().__init__(app=app)
+        self.kubectl = KubeCtl()
+        self.root_cause = self.build_structured_root_cause(
+            component=f"deployment/{self.faulty_service}",
+            namespace=self.namespace,
+            description=(
+                "The deployment is scaled to multiple replicas that all reference one ReadWriteOnce PVC while required "
+                "hostname anti-affinity separates those replicas. With topology-bound storage, only one replica can use "
+                "the claim, leaving another replica Pending and the deployment only partially Ready."
+            ),
+        )
+        self.diagnosis_oracle = LLMAsAJudgeOracle(problem=self, expected=self.root_cause)
+        if self.faulty_service == "frontend":
+            self.mitigation_oracle = DuplicatePVCMountsMitigationOracle(
+                problem=self,
+                query_port=app.frontend_port,
+                query_path="/",
+                expected_content="Otel Demo - Home"
+                if self.app_name == "astronomy_shop"
+                else "Go Microservices Example",
+            )
+        else:
+            self.mitigation_oracle = DuplicatePVCMountsMitigationOracle(problem=self)
+
+        self.app.create_workload()
+
+    @mark_fault_injected
+    def inject_fault(self):
+        print("== Fault Injection ==")
+        injector = VirtualizationFaultInjector(namespace=self.namespace)
+        injector._inject(
+            fault_type="duplicate_pvc_mounts",
+            microservices=[self.faulty_service],
+        )
+        print(f"Service: {self.faulty_service} | Namespace: {self.namespace}\n")
+
+    @mark_fault_injected
+    def recover_fault(self):
+        print("== Fault Recovery ==")
+        injector = VirtualizationFaultInjector(namespace=self.namespace)
+        injector._recover(
+            fault_type="duplicate_pvc_mounts",
+            microservices=[self.faulty_service],
+        )
+        print(f"Service: {self.faulty_service} | Namespace: {self.namespace}\n")

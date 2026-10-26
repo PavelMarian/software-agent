@@ -1,0 +1,36 @@
+{
+  "strategy": "command_checks",
+  "submission_kind": "environment_state",
+  "test_patch": "",
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "checks": [
+    {
+      "id": "task_success",
+      "required": true,
+      "weight": 1.0
+    }
+  ],
+  "test_commands": [
+    {
+      "id": "compchem-oracle",
+      "command": [
+        "python3",
+        ".benchmark/evaluate.py"
+      ],
+      "parser": "json-status",
+      "timeout_seconds": 300,
+      "shell": false
+    }
+  ],
+  "additional_oracles": [],
+  "evaluator_assets": "evaluator",
+  "state_paths": [
+    "si_ecut20.out",
+    "si_ecut30.out",
+    "si_ecut40.out",
+    "si_ecut50.out",
+    "si_ecut60.out",
+    "results.json"
+  ]
+}

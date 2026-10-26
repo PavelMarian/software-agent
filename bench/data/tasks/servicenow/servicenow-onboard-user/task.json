@@ -1,0 +1,34 @@
+{
+  "base_commit": "e885130962f61fb64ac305497996a46cfc7d18f0",
+  "end_version": null,
+  "instance_id": "servicenow-onboard-user",
+  "metadata": {
+    "environment_profile": "servicenow",
+    "mcp_profile": "servicenow",
+    "validator_profile": "servicenow",
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 5,
+        "dependency_depth": 5,
+        "state_representations": 4,
+        "constraint_interaction": 5,
+        "diagnosis_or_strategy_choice": 5,
+        "independent_validation": 5,
+        "coordination_potential": 5
+      },
+      "evidence": [
+        "Pinned source-distinct task: tasks/compositional/onboard_user.py::OnBoardUserTask.",
+        "Public seed contains 2 files across 2 state formats: .md, .py.",
+        "Independent evaluator exposes 1 native command(s), 3 semantic assertion(s), and 0 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "Onboard a generated user, including identity, group and role membership, requested hardware, and cross-record verification.\n\nThis is the pinned, source-distinct case `tasks/compositional/onboard_user.py::OnBoardUserTask`. Inspect the generated compositional goal, seeded records, references, permissions, and rollback boundaries. Execute dependent record operations in order, resolve ambiguity using instance state, preserve unrelated records, verify every cross-record relationship and side effect, and submit source-validator evidence rather than a self-declared completion flag. First audit the supplied inputs and outputs; then plan dependency order before mutating state. After execution, inspect every intermediate and final artifact, repair failed invariants without discarding provenance, and finally run independent application-native and hidden semantic checks. Place only verified deliverables under output/.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "ServiceNow",
+  "task_kind": "software_use"
+}

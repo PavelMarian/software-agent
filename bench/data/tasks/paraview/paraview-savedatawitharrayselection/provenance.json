@@ -1,0 +1,11 @@
+{
+  "end_version_commit": "",
+  "gold_patch": "",
+  "metadata": {
+    "manifest_sha256": "",
+    "source_task_id": "Clients/ParaView/Testing/Python/SaveDataWithArraySelection.py"
+  },
+  "prs": [],
+  "source": "paraview-regressiontests",
+  "source_id": "paraview-savedatawitharrayselection"
+}

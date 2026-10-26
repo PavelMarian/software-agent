@@ -1,0 +1,38 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "scivisagentbench__tangaroa-streamribbon",
+  "metadata": {
+    "environment_profile": "paraview",
+    "mcp_profile": "paraview",
+    "validator_profile": "paraview",
+    "source_task_id": "tangaroa_streamribbon",
+    "structural_review": {
+      "method": "criteria/structural-complexity v2.0",
+      "classification": "structurally_complex",
+      "dependency": "coupled",
+      "mandatory_core": [
+        "load typed vector volume",
+        "derive seeded streamlines",
+        "derive ribbons",
+        "isolate final representation",
+        "save image and reloadable state"
+      ],
+      "mechanisms": [
+        "coupled constraints",
+        "cross-representation reconciliation"
+      ],
+      "perturbation_tests": {
+        "domain_erasure": "survives",
+        "interface_idealization": "survives",
+        "artifact_substitution": "survives"
+      },
+      "review_status": "source_evidence_screened; runtime verification pending"
+    }
+  },
+  "problem_statement": "Task:\n\nLoad the tangaroa dataset from \"tangaroa_streamribbon_300x180x120_float32_scalar3.raw\", the information about this dataset:\ntangaroa (Vector)\nData Scalar Type: float\nData Byte Order: little Endian\nData Extent: 300x180x120\nNumber of Scalar Components: 3\nData loading is very important, make sure you correctly load the dataset according to their features.\n\nApply \"streamline tracer\" filter, set the \"Seed Type\" to point cloud, turn off the \"show sphere\", set the center to [81.6814, 80.708, 23.5093], and radius to 29.9\n\nAdd \"Ribbon\" filter to the streamline tracer results and set width to 0.3, set the Display representation to Surface.\n\nIn pipeline browser panel, hide everything except the ribbon filter results.\n\nPlease think step by step and make sure to fulfill all the visualization goals mentioned above.\n\nUse a white background. Find an optimal view. Render at 1280x1280. Do not show a color bar or coordinate axes.\n\nSet the viewpoint parameters as: [372.27, 278.87, 214.44] to position; [169.85, 76.46, 12.02] to focal point; [-0.41, 0.82, -0.41] to camera up direction.\n\nSave the visualization image as \"/workspace/output/tangaroa_streamribbon.png\".\n(Optional, but must save if use paraview) Save the paraview state as \"/workspace/output/tangaroa_streamribbon.pvsm\".\n(Optional, but must save if use pvpython script) Save the python script as \"/workspace/output/tangaroa_streamribbon.py\".\n(Optional, but must save if use VTK) Save the cxx code script as \"/workspace/output/tangaroa_streamribbon.cxx\"\nDo not save any other files, and always save the visualization image.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "Paraview",
+  "task_kind": "software_use"
+}

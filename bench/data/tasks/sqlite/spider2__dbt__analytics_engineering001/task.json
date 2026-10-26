@@ -1,0 +1,35 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "spider2__dbt__analytics_engineering001",
+  "metadata": {
+    "db": null,
+    "mcp_profile": "sqlite",
+    "source_id": "analytics_engineering001",
+    "variant": "dbt",
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 4,
+        "dependency_depth": 5,
+        "state_representations": 4,
+        "constraint_interaction": 5,
+        "diagnosis_or_strategy_choice": 4,
+        "independent_validation": 5,
+        "coordination_potential": 4
+      },
+      "evidence": [
+        "Pinned source-distinct task: spider2__dbt__analytics_engineering001.",
+        "Public seed contains 33 files across 3 state formats: .md, .sql, .yml.",
+        "Independent evaluator exposes 1 native command(s), 0 semantic assertion(s), and 0 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "comprehensive report that combines customer, employee, product, and purchase order details, including order quantities, costs, and timestamps, all joined together for easy analysis\n\nThis is the pinned, source-distinct case `spider2__dbt__analytics_engineering001`. Inspect the source schema, relationships, null and duplicate behavior, transformation project, and task semantics. Design the staged SQL or DBT pipeline, resolve join and precedence ambiguity, preserve provenance, materialize the result deterministically, and verify build integrity, schema, cardinality, ordering, and hidden query results. First audit the supplied inputs and outputs; then plan dependency order before mutating state. After execution, inspect every intermediate and final artifact, repair failed invariants without discarding provenance, and finally run independent application-native and hidden semantic checks. Place only verified deliverables under output/.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "SQL and the Spider 2.0 data environment",
+  "task_kind": "software_use"
+}

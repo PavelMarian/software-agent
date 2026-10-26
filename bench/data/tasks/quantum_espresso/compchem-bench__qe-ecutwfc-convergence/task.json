@@ -1,0 +1,18 @@
+{
+  "instance_id": "compchem-bench__qe-ecutwfc-convergence",
+  "task_kind": "software_use",
+  "target_software": "Quantum ESPRESSO 7.4 (pw.x)",
+  "problem_statement": "# Plane-wave cutoff convergence for silicon\n\nRun five real Quantum ESPRESSO `pw.x` SCF calculations for crystalline silicon (diamond structure, two-atom primitive cell, `ibrav = 2`, `celldm(1) = 10.26`, Si at alat coordinates `(0, 0, 0)` and `(0.25, 0.25, 0.25)`).\n\nUse `ecutwfc` values 20, 30, 40, 50, and 60 Ry. Keep `ecutrho = 480 Ry`, `conv_thr = 1.0d-10`, and the shifted `4 4 4 1 1 1` automatic k-point grid fixed in every run. Use the supplied pseudopotential at `assets/pseudo/Si.pbe-n-rrkjus_psl.1.0.0.UPF`.\n\nSave each complete, unmodified standard-output log in the workspace root as `si_ecut20.out`, `si_ecut30.out`, `si_ecut40.out`, `si_ecut50.out`, and `si_ecut60.out`. Every log must be produced by a completed `pw.x` run and end with `JOB DONE.`\n\nDetermine the smallest cutoff for which the absolute total-energy change from the preceding cutoff, divided by two atoms, is below 1 meV/atom. Save `results.json` in the workspace root with this schema:\n\n```json\n{\n  \"values\": {\n    \"ecutwfc_grid\": [20.0, 30.0, 40.0, 50.0, 60.0],\n    \"total_energies\": [\"five converged total energies in Ry\"],\n    \"converged_ecutwfc\": \"cutoff in Ry\",\n    \"criterion_meV_per_atom\": 1.0\n  },\n  \"units\": {\n    \"ecutwfc_grid\": \"Ry\",\n    \"total_energies\": \"Ry\",\n    \"converged_ecutwfc\": \"Ry\",\n    \"criterion_meV_per_atom\": \"meV/atom\"\n  }\n}\n```\n\nThe hidden evaluator inspects the calculation settings and SCF history in every log, cross-checks the reported energies, independently derives the convergence decision, and reruns the 20 Ry point. Do not fabricate or edit calculation logs.",
+  "metadata": {
+    "mcp_profile": "quantum_espresso",
+    "environment_profile": "quantum_espresso",
+    "source_difficulty": "medium",
+    "capability": "adaptive-convergence",
+    "tags": [
+      "qe",
+      "dft",
+      "convergence-test",
+      "cross-verify"
+    ]
+  }
+}

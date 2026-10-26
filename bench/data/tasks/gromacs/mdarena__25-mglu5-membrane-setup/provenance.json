@@ -1,0 +1,16 @@
+{
+  "source": "MDArena",
+  "source_id": "25_mglu5_membrane_setup",
+  "end_version_commit": "d1d789d92a9935e716182e31d99393edcd4ac7d6",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "upstream": "https://github.com/openmm/MDArena",
+    "revision": "d1d789d92a9935e716182e31d99393edcd4ac7d6",
+    "source_hashes": {
+      "instruction.md": "759acbd82ec1137d29d40e2ab55df93f61d1b2788b225d26fb402c082cbb7ef7",
+      "task.toml": "a4a54c00e830a597f026aaaa23f91c5d0b1a92b99ea205bfca765c7192065ce1",
+      "checks.py": "b66b34458038110d17f85ebee93179f13035187a4684be08850a4a891a4e0099"
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "task_id": "paraview-savedatawitharrayselection",
+  "entrypoints": {
+    "test_commands": [
+      {
+        "command": [
+          "python",
+          ".benchmark/application_evaluator.py",
+          "--profile",
+          "paraview",
+          "--submission",
+          ".",
+          "--validation",
+          ".benchmark/spec/validation.json"
+        ],
+        "id": "application-validator",
+        "parser": "json-status",
+        "shell": false,
+        "timeout_seconds": 1800.0
+      }
+    ],
+    "additional_oracles": [
+      {
+        "id": "paraview-upstream-derived",
+        "layer": "system",
+        "command": [
+          "pvpython",
+          ".benchmark/paraview_source_oracle.py",
+          "--task-id",
+          "paraview-savedatawitharrayselection",
+          "--submission",
+          "."
+        ],
+        "timeout_seconds": 1800.0,
+        "required": true,
+        "weight": 1.0
+      }
+    ]
+  },
+  "layout": {
+    "spec": "declarative task-specific evaluator configuration",
+    "reference": "hidden deterministic reference assets when available",
+    "upstream": "vendored upstream verifier code or evaluation suite"
+  },
+  "layers": [
+    {
+      "id": "command",
+      "checks": [
+        "artifact_structure",
+        "native_validation"
+      ],
+      "implementation": [
+        "python",
+        ".benchmark/application_evaluator.py",
+        "--profile",
+        "paraview",
+        "--submission",
+        ".",
+        "--validation",
+        ".benchmark/spec/validation.json"
+      ]
+    },
+    {
+      "id": "system",
+      "oracles": [
+        "paraview-upstream-derived"
+      ]
+    }
+  ],
+  "readiness": "runtime_verification_required",
+  "limitations": []
+}

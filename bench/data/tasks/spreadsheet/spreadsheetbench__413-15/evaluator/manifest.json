@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "task_id": "spreadsheetbench__413-15",
+  "entrypoints": {
+    "test_commands": [
+      {
+        "command": [
+          "python3",
+          ".benchmark/evaluate.py"
+        ],
+        "id": "spreadsheetbench-evaluator",
+        "parser": "json-status",
+        "shell": false,
+        "timeout_seconds": 1800
+      }
+    ],
+    "additional_oracles": []
+  },
+  "layout": {
+    "spec": "declarative task-specific evaluator configuration",
+    "reference": "hidden deterministic reference assets when available",
+    "upstream": "vendored upstream verifier code or evaluation suite"
+  },
+  "layers": [
+    {
+      "id": "command",
+      "checks": [
+        "case_1",
+        "case_2",
+        "case_3"
+      ],
+      "implementation": [
+        "python3",
+        ".benchmark/evaluate.py"
+      ]
+    }
+  ],
+  "readiness": "runtime_verification_required",
+  "limitations": []
+}

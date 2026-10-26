@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wrk2-job
+  labels:
+    job: workload
+spec:
+  template:
+    metadata:
+      labels:
+        job: workload
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: wrk2
+          image: ghcr.io/sregym/wrk2:sha-d2c036bc3d1138f5a0bdaffd3d87f37522c3461a@sha256:6081972a93bd88a0b4efc0859a9e26cb9c9103d2e54d8a88657f01012a77d5c0
+          imagePullPolicy: IfNotPresent
+          args: []
+          volumeMounts:
+            - name: wrk2-scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: wrk2-scripts
+          configMap:
+            name: wrk2-payload-script

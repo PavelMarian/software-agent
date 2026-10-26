@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "task_id": "recharge001",
+  "entrypoints": {
+    "test_commands": [
+      {
+        "command": [
+          "python3",
+          ".benchmark/evaluate.py"
+        ],
+        "id": "spider2-evaluator",
+        "parser": "json-status",
+        "shell": false,
+        "timeout_seconds": 1800.0
+      }
+    ],
+    "additional_oracles": []
+  },
+  "layout": {
+    "spec": "declarative task-specific evaluator configuration",
+    "reference": "hidden deterministic reference assets when available",
+    "upstream": "vendored upstream verifier code or evaluation suite"
+  },
+  "layers": [
+    {
+      "id": "command",
+      "checks": [
+        "answer"
+      ],
+      "implementation": [
+        "python3",
+        ".benchmark/evaluate.py"
+      ]
+    }
+  ],
+  "readiness": "blocked_missing_reference",
+  "limitations": [
+    "Missing required gold DuckDB: recharge.duckdb"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "source": "CompChemBench",
+  "source_id": "qe-ecutwfc-convergence",
+  "end_version_commit": "",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "upstream_repository": "https://github.com/Chenghao-Wu/compchem-bench",
+    "upstream_license": "Apache-2.0",
+    "upstream_revision": "772d3f3e1a93b875f49ddb692e6dfc3db1d3593d",
+    "upstream_task_path": "tasks/qe-ecutwfc-convergence",
+    "upstream_task_version": "1.0",
+    "upstream_created": "2026-07-20",
+    "upstream_image_digest": "sha256:f86066463d92d84f161ba4b9f564772ef2476bb727af3ec5d87b27e383d8ba05",
+    "pseudopotential_sha256": "669fb75395a9d26973b0ea1ce8223bbcb30d3396c5d48bf5e794d1243c52375a",
+    "adaptation": {
+      "submission": "The six required root-level outputs are captured as environment_state evidence.",
+      "evaluator": "The upstream verifier is hidden under .benchmark and wrapped to emit the benchmark json-status protocol.",
+      "mcp": "The generic quantum_espresso MCP profile is exposed; no source-specific benchmark code is required.",
+      "asset_normalization": "The checked-out UPF file was normalized from CRLF to canonical LF bytes so its digest matches the upstream calibrated oracle."
+    }
+  }
+}

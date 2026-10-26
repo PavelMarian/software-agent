@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: locust-fetcher
+  labels:
+    app: locust-fetcher
+    job: workload
+spec:
+  containers:
+  - name: fetcher
+    image: python:3.12-slim
+    command: ["python", "-u", "-c"]
+    args:
+      - |
+        import json
+        import os
+        import sys
+        import time
+        from urllib.request import urlopen
+
+        url = os.environ["LOCUST_URL"].rstrip("/")
+        interval = float(os.environ["INTERVAL_SECONDS"])
+        round_number = 0
+        while True:
+            # Start every round so errors cannot attach to the previous sample.
+            print(f"Running Locust on round #{round_number}")
+            try:
+                with urlopen(url + "/stats/requests", timeout=5) as response:
+                    stats = json.load(response)
+                with urlopen(url + "/stats/reset", timeout=5) as response:
+                    response.read()
+                # Keep the two-line record expected by the workload parser.
+                print(json.dumps(stats, ensure_ascii=True))
+            except Exception as error:
+                print(f"Locust collection failed: {type(error).__name__}: {error}", file=sys.stderr)
+            round_number += 1
+            time.sleep(interval)
+    env:
+    - name: LOCUST_URL
+      value: "http://load-generator:8089"
+    - name: INTERVAL_SECONDS
+      value: "10"

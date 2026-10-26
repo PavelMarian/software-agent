@@ -1,0 +1,57 @@
+{
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "additional_oracles": [
+    {
+      "id": "paraview-upstream-derived",
+      "layer": "system",
+      "command": [
+        "pvpython",
+        ".benchmark/paraview_source_oracle.py",
+        "--task-id",
+        "paraview-savedatawitharrayselection",
+        "--submission",
+        "."
+      ],
+      "timeout_seconds": 1800.0,
+      "required": true,
+      "weight": 1.0
+    }
+  ],
+  "backend_hint": null,
+  "checks": [
+    {
+      "id": "artifact_structure",
+      "required": true,
+      "weight": 0.4
+    },
+    {
+      "id": "native_validation",
+      "required": true,
+      "weight": 0.6
+    }
+  ],
+  "evaluator_assets": "evaluator",
+  "strategy": "command_checks",
+  "submission_kind": "artifact_bundle",
+  "submission_root": "output",
+  "test_commands": [
+    {
+      "command": [
+        "python",
+        ".benchmark/application_evaluator.py",
+        "--profile",
+        "paraview",
+        "--submission",
+        ".",
+        "--validation",
+        ".benchmark/spec/validation.json"
+      ],
+      "id": "application-validator",
+      "parser": "json-status",
+      "shell": false,
+      "timeout_seconds": 1800.0
+    }
+  ],
+  "test_patch": ""
+}

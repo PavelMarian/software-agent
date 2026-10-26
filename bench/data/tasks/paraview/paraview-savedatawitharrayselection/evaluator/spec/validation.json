@@ -1,0 +1,8 @@
+{
+  "required_paths": [
+    "selected-arrays-selected-blocks.vtm",
+    "selected-arrays-all-blocks.vtm",
+    "all-arrays-selected-blocks.vtm",
+    "all-arrays-all-blocks.vtm"
+  ]
+}

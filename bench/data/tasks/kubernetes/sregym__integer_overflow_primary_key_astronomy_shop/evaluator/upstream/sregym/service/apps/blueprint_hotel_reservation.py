@@ -1,0 +1,62 @@
+import logging
+
+from sregym.paths import BLUEPRINT_HOTEL_RES_METADATA, FAULT_SCRIPTS, TARGET_MICROSERVICES
+from sregym.service.apps.base import Application
+from sregym.service.kubectl import KubeCtl
+
+logger = logging.getLogger("all.application")
+logger.propagate = True
+logger.setLevel(logging.DEBUG)
+
+
+class BlueprintHotelReservation(Application):
+    def __init__(self):
+        super().__init__(BLUEPRINT_HOTEL_RES_METADATA)
+        self.kubectl = KubeCtl()
+        self.script_dir = FAULT_SCRIPTS
+        self.helm_deploy = False
+
+        self.load_app_json()
+
+    def load_app_json(self):
+        super().load_app_json()
+        metadata = self.get_app_json()
+        self.app_name = metadata["Name"]
+        self.description = metadata["Desc"]
+        self.k8s_workload_job_path = TARGET_MICROSERVICES / metadata["K8S Workload Job Path"]
+
+    def deploy(self):
+        """Deploy the Kubernetes configurations."""
+        logger.info(f"Deploying Kubernetes configurations in namespace: {self.namespace}")
+        self.create_namespace()
+        self.kubectl.apply_configs(self.namespace, self.k8s_deploy_path)
+        self.kubectl.wait_for_ready(self.namespace)
+
+    def delete(self):
+        """Delete the configmap."""
+        self.kubectl.delete_configs(self.namespace, self.k8s_deploy_path)
+        """Delete the workload job if exists"""
+        self.kubectl.delete_configs(self.namespace, self.k8s_workload_job_path)
+
+    def cleanup(self):
+        """Delete the entire namespace for the hotel reservation application."""
+        self.kubectl.delete_namespace(self.namespace)
+        self.kubectl.wait_for_namespace_deletion(self.namespace)
+        self.kubectl.delete_job(label="job=workload", namespace=self.namespace)
+
+    # helper methods
+    def _read_script(self, file_path: str) -> str:
+        with open(file_path) as file:
+            return file.read()
+
+    def create_workload(self, tput: int = None, duration: str = None, multiplier: int = None):
+        # The observation workload interface is in the problem class, keeping this interface empty to keep consistency in conductor
+        pass
+
+    def start_workload(self):
+        # The observation workload interface is in the problem class, keeping this interface empty to keep consistency in conductor
+        pass
+
+    def stop_workload(self):
+        # The observation workload interface is in the problem class, keeping this interface empty to keep consistency in conductor
+        pass

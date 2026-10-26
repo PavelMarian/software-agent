@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "case_1",
+      "input": "1_13-1_input.xlsx",
+      "answer": "1_13-1_answer.xlsx",
+      "answer_position": "A3:D32"
+    },
+    {
+      "id": "case_2",
+      "input": "2_13-1_input.xlsx",
+      "answer": "2_13-1_answer.xlsx",
+      "answer_position": "A3:D32"
+    },
+    {
+      "id": "case_3",
+      "input": "3_13-1_input.xlsx",
+      "answer": "3_13-1_answer.xlsx",
+      "answer_position": "A3:D32"
+    }
+  ]
+}

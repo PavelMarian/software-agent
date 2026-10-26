@@ -1,0 +1,59 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "spreadsheetbench__194-19",
+  "metadata": {
+    "environment_profile": "spreadsheet",
+    "instruction_type": "Sheet-Level Manipulation",
+    "mcp_profile": "spreadsheet",
+    "source_id": "194-19",
+    "test_case_count": 3,
+    "complexity_profile": {
+      "schema_version": "1.0",
+      "method": "mcp_profile_static_baseline",
+      "confidence": "medium",
+      "scale": "ordinal_1_to_5",
+      "mcp_profile": "spreadsheet",
+      "execution": {
+        "minimum_workflow_steps": 5,
+        "tool_chain_depth": 3,
+        "relevant_tool_count": 4,
+        "tool_category_count": 2,
+        "state_entity_count": 4,
+        "domain_concept_load": 3,
+        "workflow_branching": 2,
+        "verification_layers": 3,
+        "irreversibility_risk": "medium"
+      },
+      "coordination": {
+        "minimum_handoffs": 1,
+        "cross_role_dependency_count": 1,
+        "independent_verification_need": 2
+      }
+    },
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 4,
+        "dependency_depth": 4,
+        "state_representations": 4,
+        "constraint_interaction": 5,
+        "diagnosis_or_strategy_choice": 4,
+        "independent_validation": 5,
+        "coordination_potential": 4
+      },
+      "evidence": [
+        "Pinned source-distinct task: 194-19.",
+        "Public seed contains 4 files across 2 state formats: .md, .xlsx.",
+        "Independent evaluator exposes 1 native command(s), 0 semantic assertion(s), and 0 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "I am looking for a macro that can search through data on sheet two and generate results in only two columns, H and I, on sheet one. For column H, the macro should match the name in sheet two's column D, then look for the corresponding race number (#1, #2, etc.) in column H, and finally fill in the results for that race number from column I on sheet two into sheet one. This should be done for each individual race number. For column I on sheet one, the results should derive from columns J, K, L, and M on sheet two. When any data is missing from these four columns, it will always be from the farthest right column moving leftwards. The macro needs to match the meet name and race number, so for instance, if in sheet two for Port Macquarie, race #1, column J contains the number 1, then this result should reflect in cell I8 on sheet one, and so on for each number in columns K, L, and M, assigning results to their corresponding cells on sheet one. This process should continue for each race number and each meet name until the end of the sheet. I've completed results for the first meet and have uploaded a sample sheet for reference. Moreover, there is more data to the right of column J which I hadn't included in the original sample and forgot to mention, and I need the results to go directly into columns H and I without using offsets.\n\nThis is the pinned, source-distinct case `194-19`. Audit workbook structure, formulas, named ranges, formats, hidden sheets, and all public variants. Design a reusable transformation, reconcile repeated keys and missing data, preserve undeclared formulas and formatting, recalculate in the target application, diagnose discrepancies, and verify calculated values, formulas, and hidden regions. First audit the supplied inputs and outputs; then plan dependency order before mutating state. After execution, inspect every intermediate and final artifact, repair failed invariants without discarding provenance, and finally run independent application-native and hidden semantic checks. Place only verified deliverables under output/.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "Python, openpyxl, and LibreOffice Calc",
+  "task_kind": "software_use"
+}

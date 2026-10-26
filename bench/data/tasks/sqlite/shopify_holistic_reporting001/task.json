@@ -1,0 +1,14 @@
+{
+  "instance_id": "shopify_holistic_reporting001",
+  "problem_statement": "Combine daily customer order data from Shopify and user engagement metrics from Klaviyo, ensuring that records are merged based on email, date, and attribution-related details (such as campaign, flow, and variation IDs) to create a unified view of customer activity across both platforms, including last touch information and source-specific data.",
+  "target_software": "sqlite",
+  "task_kind": "software_use",
+  "repo": null,
+  "base_commit": null,
+  "start_version": null,
+  "end_version": null,
+  "metadata": {
+    "environment_profile": "sqlite",
+    "source_id": "shopify_holistic_reporting001"
+  }
+}

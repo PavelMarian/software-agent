@@ -1,0 +1,108 @@
+{
+  "backend_config": {
+    "http_tools": {
+      "base_url": "http://127.0.0.1:{port}",
+      "timeout_seconds": 600,
+      "tools": [
+        {
+          "description": "Get the live application name, namespaces, and public description.",
+          "method": "GET",
+          "name": "get_sregym_context",
+          "parameters": {
+            "additionalProperties": false,
+            "properties": {},
+            "type": "object"
+          },
+          "path": "/get_app"
+        },
+        {
+          "body_arguments": [
+            "stage",
+            "solution"
+          ],
+          "description": "Submit one official SREGym diagnosis or mitigation stage.",
+          "method": "POST",
+          "mutates_workspace": true,
+          "name": "submit_sregym",
+          "parameters": {
+            "additionalProperties": false,
+            "properties": {
+              "solution": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "diagnosis",
+                  "mitigation"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "stage",
+              "solution"
+            ],
+            "type": "object"
+          },
+          "path": "/submit",
+          "record_path": "submissions/{stage}.json",
+          "record_request": true
+        },
+        {
+          "description": "Wait for teardown and collect the official live evaluation result.",
+          "method": "GET",
+          "mutates_workspace": true,
+          "name": "collect_sregym_result",
+          "parameters": {
+            "additionalProperties": false,
+            "properties": {},
+            "type": "object"
+          },
+          "path": "/results",
+          "record_path": "results.json",
+          "wait_for": {
+            "equals": "done",
+            "json_field": "stage",
+            "path": "/status",
+            "timeout_seconds": 600
+          }
+        }
+      ]
+    },
+    "managed_process": {
+      "allocate_port": true,
+      "command": [
+        "python3",
+        "{bundle_root}/evaluator/live_driver.py",
+        "--upstream",
+        "{bundle_root}/evaluator/upstream",
+        "--problem",
+        "integer_overflow_primary_key_astronomy_shop",
+        "--workspace",
+        "{workspace}"
+      ],
+      "cwd": "{bundle_root}/evaluator/upstream",
+      "environment": {
+        "API_BIND_HOST": "127.0.0.1",
+        "API_PORT": "{port}"
+      },
+      "readiness_url": "http://127.0.0.1:{port}/status",
+      "shutdown_url": "http://127.0.0.1:{port}/shutdown",
+      "startup_timeout_seconds": 900
+    },
+    "run_environment": {
+      "KUBECONFIG": "{workspace}/.environment/kubeconfig"
+    }
+  },
+  "backend_hint": "managed_process",
+  "image": null,
+  "network_enabled": false,
+  "pass_env": [],
+  "platform": "linux/x86_64",
+  "seed_path": "workspace",
+  "shell_init": null,
+  "timeout_seconds": 3600.0,
+  "workdir": "/workspace",
+  "workspace_source": "bundle"
+}

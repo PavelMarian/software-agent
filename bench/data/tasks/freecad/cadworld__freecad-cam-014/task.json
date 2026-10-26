@@ -1,0 +1,14 @@
+{
+  "instance_id": "cadworld__freecad-cam-014",
+  "problem_statement": "Use GUI, The precondition FreeCAD file is saved at /home/user/Precondition_Unnamed.FCStd. Open that file in FreeCAD and finish the CAM setup for the target part.\n\nCreate the CAM job or jobs needed to cut the provided target part.\n\nIf the precondition file does not include a Stock object, create a suitable stock/material block that fully contains the target shape. Do not modify the target shape. Multiple CAM jobs/setups are allowed when needed to machine both sides or reach leftover material.\n\nGenerate the CAM operation toolpaths and save the completed FreeCAD document to /home/user/Unnamed.FCStd. The saved .FCStd file must include generated CAM path data.\n\nWorkspace integration: the initial file is Precondition_Unnamed.FCStd; save the final document as output/Unnamed.FCStd.",
+  "target_software": "freecad",
+  "task_kind": "software_use",
+  "repo": null,
+  "base_commit": null,
+  "start_version": null,
+  "end_version": null,
+  "metadata": {
+    "environment_profile": "freecad",
+    "source_id": "cadworld__freecad-cam-014"
+  }
+}

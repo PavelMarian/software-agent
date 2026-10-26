@@ -1,0 +1,109 @@
+# Loki Helm chart values for SREGym
+# Using SingleBinary deployment mode for simplicity
+
+loki:
+  # Use filesystem storage for single-node deployment
+  commonConfig:
+    replication_factor: 1
+
+  storage:
+    type: filesystem
+
+  # Disable authentication for internal cluster use
+  auth_enabled: false
+
+  compactor:
+    retention_enabled: true
+    working_directory: /var/loki/compactor
+    delete_request_store: filesystem
+    retention_delete_delay: 2h
+    retention_delete_worker_count: 150
+
+  limits_config:
+    retention_period: 24h
+    reject_old_samples: true
+    reject_old_samples_max_age: 24h
+
+  # Schema configuration for log storage
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+# Deploy as single binary (all-in-one)
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+  persistence:
+    enabled: true
+    storageClass: openebs-hostpath
+    size: 10Gi
+  # The chart has no top-level `resources` key, so a resources block outside a
+  # component is silently dropped. This is the path that actually applies.
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# Chunk/results caches are memcached sidecars whose chart defaults are sized for
+# a production Loki: allocatedMemory 8192 and 1024 respectively, which the chart
+# turns into 9830Mi and 1229Mi of *both* requests and limits. Those are hard
+# scheduler reservations — ~11GiB of a workstation cluster committed to caches
+# that a benchmark run (minutes of logs, few repeated queries) never fills.
+# Right-size rather than remove: query results are unchanged either way.
+chunksCache:
+  allocatedMemory: 256
+resultsCache:
+  allocatedMemory: 128
+
+# Disable components not needed in SingleBinary mode
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+# Gateway configuration
+gateway:
+  enabled: true
+  replicas: 1
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+# Enable Promtail for log collection
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://loki-gateway/loki/api/v1/push
+
+# Disable monitoring components for simplicity.
+# `monitoring.selfMonitoring` and `monitoring.lokiCanary` were removed from the
+# chart in 6.x; under 7.3.0 they are inert, which is why the canary DaemonSet
+# ran on every node regardless. lokiCanary is top-level now.
+lokiCanary:
+  enabled: false
+
+# Disable test pod
+test:
+  enabled: false

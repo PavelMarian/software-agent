@@ -1,0 +1,1 @@
+Diagnose and mitigate the live Kubernetes incident. Use cluster commands to inspect the system. Call submit_sregym for diagnosis and then mitigation. Finally call collect_sregym_result; this writes results.json for the benchmark submission.

@@ -1,0 +1,16 @@
+{
+  "backend_config": {},
+  "backend_hint": "docker",
+  "image": "software-bench/database-suite:v1",
+  "network_enabled": true,
+  "pass_env": [
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    "BIGQUERY_PROJECT"
+  ],
+  "platform": "linux/x86_64",
+  "seed_path": "workspace",
+  "shell_init": null,
+  "timeout_seconds": 3600,
+  "workdir": "/workspace",
+  "workspace_source": "bundle"
+}

@@ -1,0 +1,34 @@
+{
+  "base_commit": "799b56e5304a7fbe2b18263328310707f64e6aa0",
+  "end_version": null,
+  "instance_id": "paraview-wavelet-histogram-extracts",
+  "metadata": {
+    "environment_profile": "paraview",
+    "mcp_profile": "paraview",
+    "validator_profile": "paraview",
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 5,
+        "dependency_depth": 5,
+        "state_representations": 4,
+        "constraint_interaction": 4,
+        "diagnosis_or_strategy_choice": 4,
+        "independent_validation": 5,
+        "coordination_potential": 5
+      },
+      "evidence": [
+        "Pinned source-distinct task: Clients/PythonCatalyst/Testing/WaveletHistogramExtracts.xml.",
+        "Public seed contains 1 files across 1 state formats: .md.",
+        "Independent evaluator exposes 1 native command(s), 8 semantic assertion(s), and 0 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "Recreate the public ParaView WaveletHistogramExtracts workflow as a portable batch pipeline. Work only inside the workspace and submit every final artifact below output/. First, create a deterministic temporal RTAnalyticSource scene with six timesteps from 0 through 5. Then build a dependent analysis pipeline: apply a Slice filter to the temporal source, annotate the current time, and create an ExtractHistogram branch from the same time-aware source. Configure a two-panel layout whose render view shows the slice and whose chart view shows the histogram. Next, configure three extractors with distinct contracts: a VTI data extractor at timesteps 0 and 5, histogram PNGs at timesteps 0 and 5, and rendered slice PNGs at timesteps 0, 2, 4, and 5. The image extractors must use different resolutions, so a shared default configuration is insufficient. Save the complete ParaView application state as output/pipeline.pvsm, generate every extract, and create output/manifest.json recording the workflow identifier, six source timesteps, extractor frequencies, and all generated relative paths. Finally, rerun or reload the saved state and verify that the required VTI and PNG outputs are valid before submission. Do not substitute placeholder files, screenshots from another program, or a description of the workflow for application-generated output.\n\nThis is the pinned, source-distinct case `Clients/PythonCatalyst/Testing/WaveletHistogramExtracts.xml`. Reconstruct the complete data pipeline, dependent filters, selections, temporal state, views, and extractors. Preserve array and block semantics while configuring distinct outputs, diagnose pipeline or update failures, save reloadable state, materialize every data, table, and image artifact, and verify native formats plus semantic state assertions. First audit the supplied inputs and outputs; then plan dependency order before mutating state. After execution, inspect every intermediate and final artifact, repair failed invariants without discarding provenance, and finally run independent application-native and hidden semantic checks. Place only verified deliverables under output/.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "ParaView",
+  "task_kind": "software_use"
+}

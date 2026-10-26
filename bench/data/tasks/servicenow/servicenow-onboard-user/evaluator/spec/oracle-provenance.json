@@ -1,0 +1,6 @@
+{
+  "policy": "prefer the originating benchmark oracle; adaptations may only bridge TaskBundle paths or replace unavailable GUI fixtures with native semantic invariants",
+  "upstream": "ServiceNow WorkArena",
+  "source": "browsergym.workarena.tasks.compositional.onboard_user.OnBoardUserTask",
+  "reuse": "the managed runner must call the original generated task object's validate(page, chat_messages); candidate-authored pass flags are ignored"
+}

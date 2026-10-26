@@ -1,0 +1,15 @@
+{
+  "source": "MODFLOW 6 Examples",
+  "source_id": "scripts/ex-gwe-bhe.py",
+  "end_version_commit": "b6d5d42839349a447579a577f968fe8ac4c1c671",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "upstream": "https://github.com/MODFLOW-USGS/modflow6-examples",
+    "revision": "b6d5d42839349a447579a577f968fe8ac4c1c671",
+    "source_hashes": {
+      "ex-gwe-bhe.py": "3ddf80f2043efaa57a2ed09b0e95442fef8e7b527b4e0c15d8a7c4e01943c2c3",
+      "ex-gwe-bhe.tex": "82d9e8bb70f09b474cf34f58a212090f154a4ba1252cd4e8263142399c57c347"
+    }
+  }
+}

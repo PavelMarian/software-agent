@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "task_id": "mcpmark__postgres__security__rls_business_access",
+  "entrypoints": {
+    "test_commands": [
+      {
+        "id": "upstream-native-verifier",
+        "command": [
+          "python3",
+          ".benchmark/evaluate.py"
+        ],
+        "parser": "json-status",
+        "shell": false,
+        "timeout_seconds": 1800
+      }
+    ],
+    "additional_oracles": []
+  },
+  "layout": {
+    "spec": "declarative task-specific evaluator configuration",
+    "reference": "hidden deterministic reference assets when available",
+    "upstream": "vendored upstream verifier code or evaluation suite"
+  },
+  "layers": [
+    {
+      "id": "system",
+      "checks": [
+        "database_semantics"
+      ],
+      "implementation": "upstream/verify.py"
+    }
+  ],
+  "readiness": "runtime_verification_required",
+  "limitations": [
+    "Requires an isolated seeded PostgreSQL instance; the upstream verifier may mutate state."
+  ]
+}

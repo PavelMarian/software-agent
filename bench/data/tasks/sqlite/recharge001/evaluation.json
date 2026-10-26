@@ -1,0 +1,30 @@
+{
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "additional_oracles": [],
+  "backend_hint": null,
+  "checks": [
+    {
+      "id": "answer",
+      "required": true,
+      "weight": 1.0
+    }
+  ],
+  "evaluator_assets": "evaluator",
+  "strategy": "command_checks",
+  "submission_kind": "artifact_bundle",
+  "submission_root": "output",
+  "test_commands": [
+    {
+      "command": [
+        "python3",
+        ".benchmark/evaluate.py"
+      ],
+      "id": "spider2-evaluator",
+      "parser": "json-status",
+      "shell": false,
+      "timeout_seconds": 1800.0
+    }
+  ],
+  "test_patch": ""
+}

@@ -1,0 +1,61 @@
+{
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "additional_oracles": [
+    {
+      "id": "gamecraft-upstream-verifier",
+      "layer": "system",
+      "command": [
+        "python",
+        ".benchmark/gamecraft_source_oracle.py",
+        "--rubric",
+        ".benchmark/spec/upstream-rubric.json",
+        "--source-package",
+        ".benchmark/source",
+        "--submission",
+        ".",
+        "--threshold",
+        "0.5"
+      ],
+      "timeout_seconds": 1800.0,
+      "required": true,
+      "weight": 1.0
+    }
+  ],
+  "backend_hint": null,
+  "checks": [
+    {
+      "id": "artifact_structure",
+      "required": true,
+      "weight": 0.2
+    },
+    {
+      "id": "native_validation",
+      "required": true,
+      "weight": 0.3
+    }
+  ],
+  "evaluator_assets": "evaluator",
+  "strategy": "command_checks",
+  "submission_kind": "artifact_bundle",
+  "submission_root": "output",
+  "test_commands": [
+    {
+      "command": [
+        "python",
+        ".benchmark/application_evaluator.py",
+        "--profile",
+        "godot",
+        "--submission",
+        ".",
+        "--validation",
+        ".benchmark/spec/validation.json"
+      ],
+      "id": "application-validator",
+      "parser": "json-status",
+      "shell": false,
+      "timeout_seconds": 1800.0
+    }
+  ],
+  "test_patch": ""
+}

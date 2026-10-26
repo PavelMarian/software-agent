@@ -1,0 +1,13 @@
+{
+  "backend_config": {},
+  "backend_hint": "docker",
+  "image": "software-bench/modflow6:v1",
+  "network_enabled": false,
+  "pass_env": [],
+  "platform": "linux/x86_64",
+  "seed_path": "workspace",
+  "shell_init": null,
+  "timeout_seconds": 3600,
+  "workdir": "/workspace",
+  "workspace_source": "bundle"
+}

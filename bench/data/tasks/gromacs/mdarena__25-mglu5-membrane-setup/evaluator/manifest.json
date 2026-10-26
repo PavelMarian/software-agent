@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "task_id": "mdarena__25-mglu5-membrane-setup",
+  "entrypoints": {
+    "test_commands": [
+      {
+        "command": [
+          "python3",
+          ".benchmark/oracle_adapter.py"
+        ],
+        "id": "upstream-adapted-oracle",
+        "parser": "json-status",
+        "shell": false,
+        "timeout_seconds": 900
+      }
+    ],
+    "additional_oracles": []
+  },
+  "layout": {
+    "spec": "declarative task-specific evaluator configuration",
+    "reference": "hidden deterministic reference assets when available",
+    "upstream": "vendored upstream verifier code or evaluation suite"
+  },
+  "layers": [
+    {
+      "id": "artifact",
+      "checks": [
+        "required_outputs"
+      ],
+      "implementation": "oracle_adapter.py"
+    },
+    {
+      "id": "semantic",
+      "checks": [
+        "upstream_correctness"
+      ],
+      "implementation": "upstream_tests/correctness via rewardkit"
+    }
+  ],
+  "readiness": "runtime_verification_required",
+  "limitations": [
+    "The deterministic upstream correctness suite is scored. The preserved LLM process judge is excluded from deterministic benchmark scoring."
+  ]
+}

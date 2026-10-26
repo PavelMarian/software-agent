@@ -1,0 +1,14 @@
+{
+  "source": "Spider2-dbt",
+  "source_id": "shopify_holistic_reporting001",
+  "end_version_commit": "local-checkout",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "source_revision": "local-checkout",
+    "runtime_status": "not_verified",
+    "limitations": [
+      "Gold DuckDB database is not distributed in local source; dbt execution environment and official gold required."
+    ]
+  }
+}

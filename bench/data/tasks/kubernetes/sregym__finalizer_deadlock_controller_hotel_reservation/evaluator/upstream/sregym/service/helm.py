@@ -1,0 +1,367 @@
+"""Interface for helm operations"""
+
+import logging
+import shlex
+import subprocess
+import time
+from pathlib import Path
+
+import yaml
+
+from sregym.service.kubectl import KubeCtl
+
+logger = logging.getLogger("all.infra.helm")
+logger.propagate = True
+logger.setLevel(logging.DEBUG)
+
+
+class Helm:
+    @staticmethod
+    def install(**args):
+        """Install a helm chart
+
+        Args:
+            release_name (str): Name of the release
+            chart_path (str): Path to the helm chart
+            namespace (str): Namespace to install the chart
+            version (str): Version of the chart
+            values_file (str): Optional values override file
+            extra_args (List[str)]: Extra arguments for the helm install command
+            remote_chart (bool): Whether the chart is remote (from a Helm repo)
+        """
+
+        release_name = args.get("release_name")
+        chart_path = args.get("chart_path")
+        namespace = args.get("namespace")
+        version = args.get("version")
+        extra_args = args.get("extra_args")
+        remote_chart = args.get("remote_chart", False)
+
+        logger.info(f"Helm Install: {release_name} in namespace {namespace}")
+
+        if not remote_chart:
+            Helm.ensure_dependencies(chart_path)
+
+        command = f"helm install {release_name} {chart_path} -n {namespace} --create-namespace"
+
+        if version:
+            command += f" --version {version}"
+
+        if values_file := args.get("values_file"):
+            command += f" -f {shlex.quote(str(values_file))}"
+
+        if extra_args:
+            command += " " + " ".join(extra_args)
+
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+
+        stderr = error.decode("utf-8").strip() if error else ""
+        stdout = output.decode("utf-8").strip() if output else ""
+
+        if stderr:
+            logger.warning(f"Helm install stderr output:\n{stderr}")
+
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"Helm install failed for release '{release_name}' in namespace '{namespace}'. "
+                f"Chart: {chart_path}. Error output:\n{stderr}\n"
+                f"Stdout (for context):\n{stdout}"
+            )
+        else:
+            logger.debug(stdout)
+
+    @staticmethod
+    def ensure_dependencies(chart_path: str):
+        """Vendor a local chart's subcharts, skipping the update when already satisfied.
+
+        `helm dependency update` re-fetches every repository index over the network
+        on each call. It runs once per problem per local chart, so across a suite it
+        is a meaningful share of wall clock (and the only reason a run needs network
+        access once images are cached).
+
+        `helm dependency list` answers the same question locally in ~0.1s: it reports
+        "ok" per dependency when the pinned version is present in charts/. Only fall
+        through to the update when something is missing or the wrong version.
+        """
+        chart_dir = Path(chart_path).expanduser()
+        with (chart_dir / "Chart.yaml").open() as file:
+            chart = yaml.safe_load(file) or {}
+        # Helm v1 charts can declare dependencies in requirements.yaml.
+        requirements = chart_dir / "requirements.yaml"
+        if chart.get("apiVersion") == "v1" and requirements.exists():
+            with requirements.open() as file:
+                chart = yaml.safe_load(file) or {}
+        dependencies = chart.get("dependencies", [])
+        if not dependencies:
+            return
+
+        listing = subprocess.run(["helm", "dependency", "list", str(chart_dir)], capture_output=True, text=True)
+        if listing.returncode == 0:
+            # Keep empty repository columns for local subcharts. Warnings are
+            # outside the tab-separated table, and must not count as dependencies.
+            rows = [[field.strip() for field in line.split("\t")] for line in listing.stdout.splitlines()[1:]]
+            statuses = [row[-1] for row in rows if len(row) in (3, 4)]
+            if len(statuses) == len(dependencies) and all(status in {"ok", "unpacked"} for status in statuses):
+                logger.debug(f"Chart dependencies already satisfied for {chart_path}; skipping update")
+                return
+            logger.info(f"Chart dependencies not satisfied for {chart_path} ({statuses or 'none listed'}); updating")
+
+        result = subprocess.run(["helm", "dependency", "update", str(chart_dir)], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Helm dependency update failed for chart '{chart_path}'. "
+                f"Error output:\n{result.stderr.strip()}\nStdout:\n{result.stdout.strip()}"
+            )
+
+    @staticmethod
+    def uninstall(**args):
+        """Uninstall a helm chart
+
+        Args:
+            release_name (str): Name of the release
+            namespace (str): Namespace to uninstall the chart
+        """
+        release_name = args.get("release_name")
+        namespace = args.get("namespace")
+
+        logger.info(f"Helm Uninstall: {release_name} in namespace {namespace}")
+
+        release_exists = Helm._release_status(release_name, namespace)
+        if release_exists is None:
+            return
+        if not release_exists:
+            logger.debug(f"Release {release_name} does not exist. Skipping uninstall.")
+            return
+
+        command = f"helm uninstall {release_name} -n {namespace}"
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+
+        stderr = error.decode("utf-8").strip() if error else ""
+        stdout = output.decode("utf-8").strip() if output else ""
+
+        if stderr:
+            logger.warning(f"Helm uninstall stderr output:\n{stderr}")
+
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"Helm uninstall failed for release '{release_name}' in namespace '{namespace}'. "
+                f"Release: {release_name}. Error output:\n{stderr}\n"
+                f"Stdout (for context):\n{stdout}"
+            )
+        else:
+            logger.debug(stdout)
+
+    @staticmethod
+    def exists_release(release_name: str, namespace: str) -> bool:
+        """Check if a Helm release exists
+
+        Args:
+            release_name (str): Name of the release
+            namespace (str): Namespace to check
+
+        Returns:
+            bool: True if release exists
+        """
+        return Helm._release_status(release_name, namespace) is True
+
+    @staticmethod
+    def _release_status(release_name: str, namespace: str) -> bool | None:
+        """Return whether a release exists, or None when Helm cannot check."""
+        command = f"helm list -n {namespace}"
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+
+        if process.returncode != 0:
+            stderr = error.decode("utf-8").strip() if error else "unknown error"
+            logger.error(f"Failed to list Helm releases in namespace '{namespace}': {stderr}")
+            return None
+
+        return release_name in output.decode("utf-8")
+
+    @staticmethod
+    def assert_if_deployed(namespace: str):
+        """Assert if all services in the application are deployed
+
+        Args:
+            namespace (str): Namespace to check
+
+        Returns:
+            bool: True if deployed
+
+        Raises:
+            Exception: If not deployed
+        """
+        kubectl = KubeCtl()
+        try:
+            kubectl.wait_for_ready(namespace)
+        except Exception as e:
+            raise e
+
+        return True
+
+    @staticmethod
+    def upgrade(**args):
+        """Upgrade a helm chart
+
+        Args:
+            release_name (str): Name of the release
+            chart_path (str): Path to the helm chart
+            namespace (str): Namespace to upgrade the chart
+            values_file (str): Path to the values.yaml file
+            set_values (dict): Key-value pairs for --set options
+        """
+
+        release_name = args.get("release_name")
+        chart_path = args.get("chart_path")
+        namespace = args.get("namespace")
+        values_file = args.get("values_file")
+        set_values = args.get("set_values", {})
+
+        logger.info(f"Helm Upgrade: {release_name} in namespace {namespace}")
+
+        command = [
+            "helm",
+            "upgrade",
+            release_name,
+            chart_path,
+            "-n",
+            namespace,
+            "-f",
+            values_file,
+            "--server-side=true",
+            "--force-conflicts",
+        ]
+
+        # Add --set options if provided
+        for key, value in set_values.items():
+            command.append("--set")
+            command.append(f"{key}={value}")
+
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+
+        stderr = error.decode("utf-8").strip() if error else ""
+        stdout = output.decode("utf-8").strip() if output else ""
+
+        if stderr:
+            logger.warning(f"Helm upgrade stderr output:\n{stderr}")
+
+        if process.returncode != 0:
+            logger.error("Error during helm upgrade:")
+            raise RuntimeError(
+                f"Helm upgrade failed for release '{release_name}' in namespace '{namespace}'. "
+                f"Chart: {chart_path}. Error output:\n{stderr}\n"
+                f"Stdout (for context):\n{stdout}"
+            )
+        else:
+            logger.info("Helm upgrade successful!")
+            logger.debug(stdout)
+
+    @staticmethod
+    def add_repo(name: str, url: str, max_retries: int = 3, backoff_factor: float = 2.0):
+        """Add a Helm repository with retry logic
+
+        Args:
+            name (str): Name of the repository
+            url (str): URL of the repository
+            max_retries (int): Maximum number of retry attempts
+            backoff_factor (float): Multiplier for exponential backoff (seconds)
+
+        Raises:
+            RuntimeError: If all retry attempts fail
+        """
+        logger.info(f"Helm Repo Add: {name} with url {url}")
+        command = f"helm repo add {name} {url}"
+
+        for attempt in range(max_retries):
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, error = process.communicate()
+
+            # Check if the repo add was successful (return code 0) or repo already exists
+            stdout = output.decode("utf-8").strip() if output else ""
+            stderr = error.decode("utf-8").strip() if error else ""
+
+            # Success if returncode is 0 or if "already exists" in output
+            if process.returncode == 0 or "already exists" in stderr or "already exists" in stdout:
+                logger.info(f"Helm repo {name} added successfully: {stdout}")
+                return
+
+            if attempt < max_retries - 1:
+                wait_time = backoff_factor**attempt
+                logger.warning(
+                    f"Helm repo add failed on attempt {attempt + 1}/{max_retries}. "
+                    f"Retrying in {wait_time}s... Error: {stderr}"
+                )
+                time.sleep(wait_time)
+            else:
+                # Final attempt failed
+                logger.error(
+                    f"Helm repo add failed after {max_retries} attempts. "
+                    f"Error output:\n{stderr}\n"
+                    f"Stdout (for context):\n{stdout}"
+                )
+                raise RuntimeError(
+                    f"Helm repo add failed for '{name}' at {url} after {max_retries} attempts. "
+                    f"Error output:\n{stderr}\n"
+                    f"Stdout (for context):\n{stdout}"
+                )
+
+    @staticmethod
+    def repo_update(max_retries: int = 3, backoff_factor: float = 2.0):
+        """Update Helm repositories with retry logic
+
+        Args:
+            max_retries (int): Maximum number of retry attempts
+            backoff_factor (float): Multiplier for exponential backoff (seconds)
+
+        Raises:
+            RuntimeError: If all retry attempts fail
+        """
+        logger.info("Helm Repo Update with retry logic")
+        command = "helm repo update"
+
+        for attempt in range(max_retries):
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, error = process.communicate()
+
+            if process.returncode == 0:
+                logger.info(f"Helm repo update successful on attempt {attempt + 1}")
+                logger.debug(output.decode("utf-8"))
+                return
+
+            # Log the error but continue retrying
+            stderr = error.decode("utf-8").strip() if error else ""
+            stdout = output.decode("utf-8").strip() if output else ""
+
+            if attempt < max_retries - 1:
+                wait_time = backoff_factor**attempt
+                logger.warning(
+                    f"Helm repo update failed on attempt {attempt + 1}/{max_retries}. "
+                    f"Retrying in {wait_time}s... Error: {stderr}"
+                )
+                time.sleep(wait_time)
+            else:
+                # Final attempt failed
+                logger.error(
+                    f"Helm repo update failed after {max_retries} attempts. "
+                    f"Error output:\n{stderr}\n"
+                    f"Stdout (for context):\n{stdout}"
+                )
+                raise RuntimeError(
+                    f"Helm repo update failed after {max_retries} attempts. "
+                    f"Error output:\n{stderr}\n"
+                    f"Stdout (for context):\n{stdout}"
+                )
+
+
+# Example usage
+if __name__ == "__main__":
+    sn_configs = {
+        "release_name": "social-network",
+        "chart_path": "~/DeathStarBench/socialNetwork/helm-chart/socialnetwork",
+        "namespace": "social-network",
+    }
+    Helm.install(**sn_configs)
+    Helm.uninstall(**sn_configs)

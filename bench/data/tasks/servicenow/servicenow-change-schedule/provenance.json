@@ -1,0 +1,11 @@
+{
+  "source": "WorkArena compositional tasks",
+  "source_id": "ThreeChangesFixWideTightPriorityVariedRiskChangeRequestSchedulingTask",
+  "end_version_commit": "e885130962f61fb64ac305497996a46cfc7d18f0",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "source_task_id": "tasks/compositional/manage_change_request_schedule.py::ThreeChangesFixWideTightPriorityVariedRiskChangeRequestSchedulingTask",
+    "revision": "e885130962f61fb64ac305497996a46cfc7d18f0"
+  }
+}

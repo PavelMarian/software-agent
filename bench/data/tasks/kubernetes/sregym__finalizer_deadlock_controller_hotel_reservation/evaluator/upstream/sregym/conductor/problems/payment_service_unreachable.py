@@ -1,0 +1,48 @@
+"""Otel demo paymentServiceUnreachable feature flag fault."""
+
+from sregym.conductor.oracles.alert_oracle import AlertOracle
+from sregym.conductor.oracles.llm_as_a_judge.llm_as_a_judge_oracle import LLMAsAJudgeOracle
+from sregym.conductor.problems.base import Problem
+from sregym.generators.fault.inject_otel import OtelFaultInjector
+from sregym.service.apps.astronomy_shop import AstronomyShop
+from sregym.service.kubectl import KubeCtl
+from sregym.utils.decorators import mark_fault_injected
+
+
+class PaymentServiceUnreachable(Problem):
+    """Deprecated in SREGym 1.1 after reaching 100% overall pass@3."""
+
+    def __init__(self):
+        super().__init__(app=AstronomyShop())
+        self.kubectl = KubeCtl()
+        self.injector = OtelFaultInjector(namespace=self.namespace)
+        self.faulty_service = "checkout"
+        self.feature_flag = "paymentUnreachable"
+        self.root_cause = self.build_structured_root_cause(
+            component=self.faulty_service,
+            namespace=self.namespace,
+            description=(
+                f"The `{self.faulty_service}` deployment cannot reach the payment service, causing all "
+                "payment-dependent operations to time out. Checkout retries and eventually times out when creating "
+                "payments, causing order placement failures. Users can browse and add items but fail consistently "
+                "at payment. "
+                f"Mechanism: the `flagd-config` ConfigMap in the `{self.namespace}` namespace has the "
+                f'`{self.feature_flag}` feature flag\'s `defaultVariant` set to `"on"`, which activates the '
+                "OpenTelemetry demo's in-app fault path that makes the checkout service redirect its payment-client "
+                "gRPC calls to an unreachable address so every charge attempt times out."
+            ),
+        )
+        # === Attach evaluation oracles ===
+        self.diagnosis_oracle = LLMAsAJudgeOracle(problem=self, expected=self.root_cause)
+        self.mitigation_oracle = AlertOracle(problem=self)
+
+    @mark_fault_injected
+    def inject_fault(self):
+        print("== Fault Injection ==")
+        self.injector.inject_fault(self.feature_flag)
+        print(f"Fault: paymentServiceUnreachable | Namespace: {self.namespace}\n")
+
+    @mark_fault_injected
+    def recover_fault(self):
+        print("== Fault Recovery ==")
+        self.injector.recover_fault(self.feature_flag)

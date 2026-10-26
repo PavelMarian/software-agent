@@ -1,0 +1,34 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "modflow-test-gwe-cnd",
+  "metadata": {
+    "environment_profile": "modflow",
+    "mcp_profile": "modflow",
+    "validator_profile": "modflow",
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 4,
+        "dependency_depth": 5,
+        "state_representations": 4,
+        "constraint_interaction": 5,
+        "diagnosis_or_strategy_choice": 4,
+        "independent_validation": 5,
+        "coordination_potential": 4
+      },
+      "evidence": [
+        "Pinned source-distinct task: autotest/test_gwe_cnd.py.",
+        "Public seed contains 1 files across 1 state formats: .py.",
+        "Independent evaluator exposes 1 native command(s), 1 semantic assertion(s), and 0 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "Build and execute the supplied MODFLOW 6 regression case and submit its normal-termination listing and numerical outputs under output/.\n\nThis is the pinned, source-distinct case `autotest/test_gwe_cnd.py`. Inspect the coupled flow/energy model, discretization, packages, exchanges, stress periods, observations, and budget terms. Execute the dependency-ordered model, diagnose convergence or balance failures, reconcile heads, temperatures, observations, and budgets across time, preserve restartable inputs, and verify conservation plus hidden series. First audit the supplied inputs and outputs; then plan dependency order before mutating state. After execution, inspect every intermediate and final artifact, repair failed invariants without discarding provenance, and finally run independent application-native and hidden semantic checks. Place only verified deliverables under output/.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "MODFLOW 6",
+  "task_kind": "software_use"
+}

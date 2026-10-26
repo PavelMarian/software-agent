@@ -1,0 +1,45 @@
+"""Otel demo productCatalogFailure feature flag fault."""
+
+from sregym.conductor.oracles.alert_oracle import AlertOracle
+from sregym.conductor.oracles.llm_as_a_judge.llm_as_a_judge_oracle import LLMAsAJudgeOracle
+from sregym.conductor.problems.base import Problem
+from sregym.generators.fault.inject_otel import OtelFaultInjector
+from sregym.service.apps.astronomy_shop import AstronomyShop
+from sregym.service.kubectl import KubeCtl
+from sregym.utils.decorators import mark_fault_injected
+
+
+class ProductCatalogServiceFailure(Problem):
+    def __init__(self):
+        super().__init__(app=AstronomyShop())
+        self.kubectl = KubeCtl()
+        self.injector = OtelFaultInjector(namespace=self.namespace)
+        self.faulty_service = "product-catalog"
+        self.feature_flag = "productCatalogFailure"
+        self.root_cause = self.build_structured_root_cause(
+            component=self.faulty_service,
+            namespace=self.namespace,
+            description=(
+                f"The `{self.faulty_service}` deployment is returning persistent errors on catalog queries, "
+                "causing product listing and detail retrieval to fail. This degrades browse and search flows. "
+                "Users see missing product data, empty results, or repeated errors when loading product pages. "
+                f"Mechanism: the `flagd-config` ConfigMap in the `{self.namespace}` namespace has the "
+                f'`{self.feature_flag}` feature flag\'s `defaultVariant` set to `"on"`, which activates the '
+                "OpenTelemetry demo's in-app fault path that makes the product-catalog service's `GetProduct` gRPC "
+                "handler return an error for a specific product."
+            ),
+        )
+        # === Attach evaluation oracles ===
+        self.diagnosis_oracle = LLMAsAJudgeOracle(problem=self, expected=self.root_cause)
+        self.mitigation_oracle = AlertOracle(problem=self)
+
+    @mark_fault_injected
+    def inject_fault(self):
+        print("== Fault Injection ==")
+        self.injector.inject_fault(self.feature_flag)
+        print(f"Fault: productCatalogFailure | Namespace: {self.namespace}\n")
+
+    @mark_fault_injected
+    def recover_fault(self):
+        print("== Fault Recovery ==")
+        self.injector.recover_fault(self.feature_flag)

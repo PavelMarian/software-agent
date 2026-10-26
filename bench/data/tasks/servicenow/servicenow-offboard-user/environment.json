@@ -1,0 +1,21 @@
+{
+  "backend_config": {
+    "requires": "pinned WorkArena instance",
+    "source_validator_class": "browsergym.workarena.tasks.compositional.offboard_user.OffBoardUserTask",
+    "source_validator_contract": "call task.validate(page, chat_messages) on the preserved generated episode and emit a runner-owned receipt"
+  },
+  "backend_hint": "managed",
+  "image": "software-bench/servicenow:v1",
+  "network_enabled": true,
+  "pass_env": [
+    "SERVICENOW_TOKEN",
+    "SERVICENOW_URL",
+    "WORKARENA_VALIDATION_RECEIPT"
+  ],
+  "platform": "linux/x86_64",
+  "seed_path": "workspace",
+  "shell_init": null,
+  "timeout_seconds": 1800.0,
+  "workdir": "/workspace",
+  "workspace_source": "bundle"
+}

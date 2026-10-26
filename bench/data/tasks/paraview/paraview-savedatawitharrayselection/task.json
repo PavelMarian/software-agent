@@ -1,0 +1,34 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "paraview-savedatawitharrayselection",
+  "metadata": {
+    "environment_profile": "paraview",
+    "mcp_profile": "paraview",
+    "validator_profile": "paraview",
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 5,
+        "dependency_depth": 5,
+        "state_representations": 4,
+        "constraint_interaction": 4,
+        "diagnosis_or_strategy_choice": 4,
+        "independent_validation": 5,
+        "coordination_potential": 5
+      },
+      "evidence": [
+        "Pinned source-distinct task: Clients/ParaView/Testing/Python/SaveDataWithArraySelection.py.",
+        "Public seed contains 1 files across 1 state formats: .py.",
+        "Independent evaluator exposes 1 native command(s), 0 semantic assertion(s), and 0 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "Execute all four array/block-selection cases from the supplied ParaView SaveData regression workflow. Submit selected-arrays-selected-blocks.vtm, selected-arrays-all-blocks.vtm, all-arrays-selected-blocks.vtm, and all-arrays-all-blocks.vtm under output/. The four artifacts must respectively preserve: Normals with Elevation1 only; Normals with both blocks; Elevation and Normals with Elevation1 only; and both arrays with both Elevation blocks. The hidden oracle opens every artifact with ParaView and checks its native array and multiblock structure.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "ParaView",
+  "task_kind": "software_use"
+}

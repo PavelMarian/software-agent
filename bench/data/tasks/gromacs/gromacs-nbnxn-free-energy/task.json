@@ -1,0 +1,34 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "gromacs-nbnxn-free-energy",
+  "metadata": {
+    "environment_profile": "gromacs",
+    "mcp_profile": "gromacs",
+    "validator_profile": "gromacs",
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 4,
+        "dependency_depth": 4,
+        "state_representations": 4,
+        "constraint_interaction": 4,
+        "diagnosis_or_strategy_choice": 4,
+        "independent_validation": 5,
+        "coordination_potential": 4
+      },
+      "evidence": [
+        "Pinned source-distinct task: complex/nbnxn-free-energy.",
+        "Public seed contains 4 files across 4 state formats: .gro, .mdp, .top, <none>.",
+        "Independent evaluator exposes 1 native command(s), 1 semantic assertion(s), and 1 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "Run the supplied free-energy regression case and submit md.log plus requested trajectory artifacts under output/.\n\nThis is the pinned, source-distinct case `complex/nbnxn-free-energy`. Inspect topology, coordinates, parameters, precision variants, and reference observables. Resolve preprocessing warnings without weakening the case, execute the dependent preprocess/simulate/analyze chain, diagnose numerical or completion failures, reconcile trajectory, energy, and log evidence, and verify native readability plus hidden tolerances. First audit the supplied inputs and outputs; then plan dependency order before mutating state. After execution, inspect every intermediate and final artifact, repair failed invariants without discarding provenance, and finally run independent application-native and hidden semantic checks. Place only verified deliverables under output/.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "GROMACS",
+  "task_kind": "software_use"
+}

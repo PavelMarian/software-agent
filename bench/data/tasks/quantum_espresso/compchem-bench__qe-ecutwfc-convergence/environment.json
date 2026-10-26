@@ -1,0 +1,13 @@
+{
+  "backend_hint": "docker",
+  "image": "software-bench/quantum-espresso-7.4:compchem-bench-20260720",
+  "workdir": "/workspace",
+  "platform": "linux/x86_64",
+  "timeout_seconds": 1800,
+  "network_enabled": false,
+  "workspace_source": "bundle",
+  "seed_path": "workspace",
+  "shell_init": null,
+  "pass_env": [],
+  "backend_config": {}
+}

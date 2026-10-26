@@ -1,0 +1,16 @@
+{
+  "source": "MDArena",
+  "source_id": "26_d3_receptor_membrane_setup",
+  "end_version_commit": "d1d789d92a9935e716182e31d99393edcd4ac7d6",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "upstream": "https://github.com/openmm/MDArena",
+    "revision": "d1d789d92a9935e716182e31d99393edcd4ac7d6",
+    "source_hashes": {
+      "instruction.md": "f7d07e7a858e174be98078d94c8623e44ee7fec232324a77d11a7d7b4ab53b48",
+      "task.toml": "d182200fb3ac41af4657aacd52600fedde2c725dcfc3aa376af54991c07bdb01",
+      "checks.py": "0abaa4541e8c95325b5c7967f7941f56b0c48834467bf81d3b0d959e089faa16"
+    }
+  }
+}

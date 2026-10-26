@@ -1,0 +1,13 @@
+{
+  "required_paths": [
+    "pipeline.pvsm",
+    "extracts/data_000.vti",
+    "extracts/data_005.vti",
+    "extracts/histogram_000.png",
+    "extracts/histogram_005.png",
+    "extracts/render_000.png",
+    "extracts/render_002.png",
+    "extracts/render_004.png",
+    "extracts/render_005.png"
+  ]
+}

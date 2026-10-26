@@ -1,0 +1,12 @@
+{
+  "end_version_commit": "",
+  "gold_patch": "",
+  "metadata": {
+    "manifest_sha256": "32b9063bde586e40642bf3d655aee57e5dcaabeb4963e05aed6a4f0e5c7d86f5",
+    "source_task_id": "autotest/test_gwe_fmi01.py",
+    "upstream": "MODFLOW 6"
+  },
+  "prs": [],
+  "source": "public-profile-slices",
+  "source_id": "modflow-gwe-fmi01"
+}

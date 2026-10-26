@@ -1,0 +1,33 @@
+{
+  "backend_config": {},
+  "backend_hint": "docker",
+  "image": "software-bench/godot:v1",
+  "network_enabled": true,
+  "pass_env": [
+    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_AUTH_TOKEN",
+    "GAMECRAFT_BENCH_JUDGE",
+    "GAMECRAFT_BENCH_JUDGE_ANTHROPIC_API_KEY",
+    "GAMECRAFT_BENCH_JUDGE_ANTHROPIC_AUTH_TOKEN",
+    "GAMECRAFT_BENCH_JUDGE_ANTHROPIC_BASE_URL",
+    "GAMECRAFT_BENCH_JUDGE_GEMINI_API_KEY",
+    "GAMECRAFT_BENCH_JUDGE_GEMINI_BASE_URL",
+    "GAMECRAFT_BENCH_JUDGE_GOOGLE_API_KEY",
+    "GAMECRAFT_BENCH_JUDGE_MODEL",
+    "GAMECRAFT_BENCH_JUDGE_MOONSHOT_API_KEY",
+    "GAMECRAFT_BENCH_JUDGE_MOONSHOT_BASE_URL",
+    "GAMECRAFT_BENCH_JUDGE_OPENAI_API_KEY",
+    "GAMECRAFT_BENCH_JUDGE_OPENAI_BASE_URL",
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "MOONSHOT_API_KEY",
+    "OPENAI_API_KEY",
+    "OPENAI_BASE_URL"
+  ],
+  "platform": "linux/x86_64",
+  "seed_path": "workspace",
+  "shell_init": null,
+  "timeout_seconds": 1800.0,
+  "workdir": "/workspace",
+  "workspace_source": "bundle"
+}

@@ -1,0 +1,39 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "modflow6-examples__ex-gwe-bhe",
+  "metadata": {
+    "environment_profile": "modflow",
+    "mcp_profile": "modflow",
+    "validator_profile": "modflow",
+    "source_task_id": "scripts/ex-gwe-bhe.py",
+    "structural_review": {
+      "method": "criteria/structural-complexity v2.0",
+      "classification": "structurally_complex",
+      "dependency": "coupled",
+      "mandatory_core": [
+        "construct coupled component models",
+        "configure dependent exchanges and stresses",
+        "run the simulation",
+        "extract observations",
+        "reconcile package and global budgets"
+      ],
+      "mechanisms": [
+        "fork/join",
+        "coupled constraints",
+        "global invariant"
+      ],
+      "perturbation_tests": {
+        "domain_erasure": "survives",
+        "interface_idealization": "survives",
+        "artifact_substitution": "survives"
+      },
+      "review_status": "source_evidence_screened; runtime verification pending"
+    }
+  },
+  "problem_statement": "Reconstruct and run the coupled MODFLOW 6 case `ex-gwe-bhe` using the supplied input data. Implement the complete model in `output/model.py`; it must build, write, and run the required flow/transport or flow/energy components rather than copying a pre-generated result. Save `output/results.json` with `normal_termination`, an `observations` object containing the principal simulated series, and a `budget_summary` object reporting the relevant global and package balance errors. The model, observations, and budgets must agree with one another and be reproducible by rerunning the script.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "Modflow",
+  "task_kind": "software_use"
+}

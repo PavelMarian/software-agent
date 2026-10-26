@@ -1,0 +1,45 @@
+{
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "additional_oracles": [],
+  "backend_hint": null,
+  "checks": [
+    {
+      "id": "model_script",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "build_run_chain",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "result_contract",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "deterministic_replay",
+      "required": true,
+      "weight": 1.0
+    }
+  ],
+  "evaluator_assets": "evaluator",
+  "strategy": "command_checks",
+  "submission_kind": "artifact_bundle",
+  "submission_root": "output",
+  "test_commands": [
+    {
+      "command": [
+        "python3",
+        ".benchmark/oracle_adapter.py"
+      ],
+      "id": "upstream-adapted-oracle",
+      "parser": "json-status",
+      "shell": false,
+      "timeout_seconds": 3600
+    }
+  ],
+  "test_patch": ""
+}

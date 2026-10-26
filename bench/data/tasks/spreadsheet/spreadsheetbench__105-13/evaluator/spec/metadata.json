@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "case_1",
+      "input": "1_105-13_input.xlsx",
+      "answer": "1_105-13_answer.xlsx",
+      "answer_position": "'Calculation!'C11:I490'"
+    },
+    {
+      "id": "case_2",
+      "input": "2_105-13_input.xlsx",
+      "answer": "2_105-13_answer.xlsx",
+      "answer_position": "'Calculation!'C11:I490'"
+    },
+    {
+      "id": "case_3",
+      "input": "3_105-13_input.xlsx",
+      "answer": "3_105-13_answer.xlsx",
+      "answer_position": "'Calculation!'C11:I490'"
+    }
+  ]
+}

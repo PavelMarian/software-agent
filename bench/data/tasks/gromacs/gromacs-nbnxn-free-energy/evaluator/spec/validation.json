@@ -1,0 +1,23 @@
+{
+  "content_assertions": [
+    {
+      "path": "md.log",
+      "regex": "Finished mdrun"
+    }
+  ],
+  "reference_metrics": [
+    {
+      "abs_tol": 10,
+      "path": "md.log",
+      "reference": "reference_d.log",
+      "regex": "(?m)^\\s*([+-]?[0-9.]+e[+-]\\d+)\\s+[+-]?[0-9.]+e",
+      "rel_tol": 0.02
+    }
+  ],
+  "required_paths": [
+    "md.log",
+    "md.tpr",
+    "md.trr",
+    "md.edr"
+  ]
+}

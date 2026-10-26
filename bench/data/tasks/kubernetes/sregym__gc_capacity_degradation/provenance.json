@@ -1,0 +1,14 @@
+{
+  "source": "SREGym",
+  "source_id": "gc_capacity_degradation",
+  "end_version_commit": "9093167a7082",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "source_revision": "9093167a7082",
+    "runtime_status": "not_verified",
+    "limitations": [
+      "Requires a real SREGym-compatible cluster and registry; live run not verified."
+    ]
+  }
+}

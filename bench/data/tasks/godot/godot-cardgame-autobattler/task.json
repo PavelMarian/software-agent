@@ -1,0 +1,34 @@
+{
+  "base_commit": null,
+  "end_version": null,
+  "instance_id": "godot-cardgame-autobattler",
+  "metadata": {
+    "environment_profile": "godot",
+    "mcp_profile": "godot",
+    "validator_profile": "godot",
+    "structural_review": {
+      "method": "manual_static_workflow_review",
+      "confidence": "high",
+      "axes": {
+        "subgoal_count": 5,
+        "dependency_depth": 5,
+        "state_representations": 4,
+        "constraint_interaction": 5,
+        "diagnosis_or_strategy_choice": 5,
+        "independent_validation": 5,
+        "coordination_potential": 5
+      },
+      "evidence": [
+        "Pinned source-distinct task: cardgame-autobattler.",
+        "Public seed contains 1 files across 1 state formats: <none>.",
+        "Independent evaluator exposes 1 native command(s), 3 semantic assertion(s), and 0 numerical assertion(s).",
+        "The reviewed shortest successful workflow requires audit, dependency planning, application execution, failure reconciliation, and independent verification."
+      ]
+    }
+  },
+  "problem_statement": "Implement the supplied GameCraft card-game task and submit a runnable project.godot plus deterministic result evidence under output/.\n\nThis is the pinned, source-distinct case `cardgame-autobattler`. Inspect the project graph, resources, scripts, scenes, signals, and deterministic task-card states. Build the interacting mechanics as a runnable state machine, preserve transitions and content counts, diagnose headless failures, reconcile behavior with demonstrations, and verify launch, scripted replay, persistence, and output snapshots. First audit the supplied inputs and outputs; then plan dependency order before mutating state. After execution, inspect every intermediate and final artifact, repair failed invariants without discarding provenance, and finally run independent application-native and hidden semantic checks. Place only verified deliverables under output/.",
+  "repo": null,
+  "start_version": null,
+  "target_software": "Godot",
+  "task_kind": "software_use"
+}

@@ -1,0 +1,14 @@
+{
+  "source": "MCPMark",
+  "source_id": "security/rls_business_access",
+  "end_version_commit": "cd45b7f57923b9b3985467f5139927575f83141c",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "source_revision": "cd45b7f57923b9b3985467f5139927575f83141c",
+    "runtime_status": "not_verified",
+    "limitations": [
+      "Requires isolated PostgreSQL and exact upstream seed; verifier may modify database; source revision differs from historical review if checkout differs."
+    ]
+  }
+}

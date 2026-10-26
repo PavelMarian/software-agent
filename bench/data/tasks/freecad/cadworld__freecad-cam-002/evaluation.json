@@ -1,0 +1,45 @@
+{
+  "strategy": "command_checks",
+  "submission_kind": "artifact_bundle",
+  "test_patch": "",
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "checks": [
+    {
+      "id": "artifact_structure",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "geometry_preservation",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "cam_toolpaths",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "material_removal_accuracy",
+      "required": true,
+      "weight": 1.0
+    }
+  ],
+  "test_commands": [
+    {
+      "id": "upstream-native-verifier",
+      "command": [
+        "python3",
+        ".benchmark/evaluate.py"
+      ],
+      "parser": "json-status",
+      "shell": false,
+      "timeout_seconds": 1800
+    }
+  ],
+  "additional_oracles": [],
+  "evaluator_assets": "evaluator",
+  "backend_hint": null,
+  "submission_root": "output"
+}

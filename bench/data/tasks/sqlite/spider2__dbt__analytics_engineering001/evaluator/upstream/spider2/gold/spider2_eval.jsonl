@@ -1,0 +1,1 @@
+{"instance_id": "analytics_engineering001", "evaluation": {"func": "duckdb_match", "parameters": {"gold": "analytics_engineering.duckdb", "condition_tabs": ["fact_purchase_order", "obt_customer_reporting"], "condition_cols": [[0, 1, 2, 3, 4, 5, 8, 9, 15, 16, 20], [0, 1, 2, 3, 5, 10, 11, 12, 20, 21, 23, 28, 29, 36, 37, 38, 40, 41, 42, 43, 44, 45]], "ignore_orders": [true, true]}}}

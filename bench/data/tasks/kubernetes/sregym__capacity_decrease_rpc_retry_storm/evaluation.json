@@ -1,0 +1,38 @@
+{
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "additional_oracles": [],
+  "backend_hint": "local",
+  "checks": [
+    {
+      "id": "diagnosis",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "mitigation",
+      "required": true,
+      "weight": 1.0
+    }
+  ],
+  "evaluator_assets": "evaluator",
+  "state_paths": [
+    "submissions",
+    "results.json"
+  ],
+  "strategy": "command_checks",
+  "submission_kind": "environment_state",
+  "test_commands": [
+    {
+      "command": [
+        "python3",
+        ".benchmark/evaluate.py"
+      ],
+      "id": "sregym-results",
+      "parser": "json-status",
+      "shell": false,
+      "timeout_seconds": 60.0
+    }
+  ],
+  "test_patch": ""
+}

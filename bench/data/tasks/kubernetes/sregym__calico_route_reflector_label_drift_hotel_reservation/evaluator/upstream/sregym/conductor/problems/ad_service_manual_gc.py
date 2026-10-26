@@ -1,0 +1,47 @@
+"""Otel demo adServiceManualGc feature flag fault."""
+
+from sregym.conductor.oracles.alert_oracle import AlertOracle
+from sregym.conductor.oracles.llm_as_a_judge.llm_as_a_judge_oracle import LLMAsAJudgeOracle
+from sregym.conductor.problems.base import Problem
+from sregym.generators.fault.inject_otel import OtelFaultInjector
+from sregym.service.apps.astronomy_shop import AstronomyShop
+from sregym.service.kubectl import KubeCtl
+from sregym.utils.decorators import mark_fault_injected
+
+
+class AdServiceManualGc(Problem):
+    def __init__(self):
+        super().__init__(app=AstronomyShop())
+        self.kubectl = KubeCtl()
+        self.injector = OtelFaultInjector(namespace=self.namespace)
+        self.faulty_service = "ad"
+        self.feature_flag = "adManualGc"
+        self.root_cause = self.build_structured_root_cause(
+            component=self.faulty_service,
+            namespace=self.namespace,
+            description=(
+                f"The `{self.faulty_service}` deployment is experiencing excessive manual garbage collection "
+                "cycles that consume CPU and cause elevated latency with performance degradation and potential "
+                "service interruptions. The workload exhibits periodic latency spikes and unstable response times "
+                "as aggressive garbage collection cycles pause request handling. Users may observe slow or missing "
+                "ad responses and occasional transient failures while traffic is otherwise normal. "
+                f"Mechanism: the `flagd-config` ConfigMap in the `{self.namespace}` namespace has the "
+                f'`{self.feature_flag}` feature flag\'s `defaultVariant` set to `"on"`, which activates the '
+                "OpenTelemetry demo's in-app fault path that periodically forces the ad service JVM to perform "
+                "full manual garbage collections, producing the observed throughput and latency degradation."
+            ),
+        )
+        # === Attach evaluation oracles ===
+        self.diagnosis_oracle = LLMAsAJudgeOracle(problem=self, expected=self.root_cause)
+        self.mitigation_oracle = AlertOracle(problem=self)
+
+    @mark_fault_injected
+    def inject_fault(self):
+        print("== Fault Injection ==")
+        self.injector.inject_fault(self.feature_flag)
+        print(f"Fault: adServiceManualGc | Namespace: {self.namespace}\n")
+
+    @mark_fault_injected
+    def recover_fault(self):
+        print("== Fault Recovery ==")
+        self.injector.recover_fault(self.feature_flag)

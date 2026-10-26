@@ -1,0 +1,46 @@
+"""Otel demo imageSlowLoad feature flag fault."""
+
+from sregym.conductor.oracles.alert_oracle import AlertOracle
+from sregym.conductor.oracles.llm_as_a_judge.llm_as_a_judge_oracle import LLMAsAJudgeOracle
+from sregym.conductor.problems.base import Problem
+from sregym.generators.fault.inject_otel import OtelFaultInjector
+from sregym.service.apps.astronomy_shop import AstronomyShop
+from sregym.service.kubectl import KubeCtl
+from sregym.utils.decorators import mark_fault_injected
+
+
+class ImageSlowLoad(Problem):
+    def __init__(self):
+        super().__init__(app=AstronomyShop())
+        self.kubectl = KubeCtl()
+        self.injector = OtelFaultInjector(namespace=self.namespace)
+        self.faulty_service = "frontend"
+        self.feature_flag = "imageSlowLoad"
+        self.root_cause = self.build_structured_root_cause(
+            component=self.faulty_service,
+            namespace=self.namespace,
+            description=(
+                f"The `{self.faulty_service}` deployment is serving image responses with abnormally high "
+                "latency, causing slow page renders and degraded user experience. Image-dependent pages show "
+                "elevated latency and partial rendering while requests wait for delayed asset responses. Users "
+                "observe sluggish page loads and visibly delayed product imagery. "
+                f"Mechanism: the `flagd-config` ConfigMap in the `{self.namespace}` namespace has the "
+                f'`{self.feature_flag}` feature flag\'s `defaultVariant` set to `"10sec"`, which triggers the '
+                "OpenTelemetry demo's Envoy proxy fault-injection path that adds a 10-second delay to product-image "
+                "responses served through the frontend."
+            ),
+        )
+        # === Attach evaluation oracles ===
+        self.diagnosis_oracle = LLMAsAJudgeOracle(problem=self, expected=self.root_cause)
+        self.mitigation_oracle = AlertOracle(problem=self)
+
+    @mark_fault_injected
+    def inject_fault(self):
+        print("== Fault Injection ==")
+        self.injector.inject_fault(self.feature_flag)
+        print(f"Fault: imageSlowLoad | Namespace: {self.namespace}\n")
+
+    @mark_fault_injected
+    def recover_fault(self):
+        print("== Fault Recovery ==")
+        self.injector.recover_fault(self.feature_flag)

@@ -1,0 +1,9 @@
+{
+  "source_task_id": "25_mglu5_membrane_setup",
+  "required": [
+    "final_answer.txt",
+    "preparation_report.md",
+    "system.gro",
+    "topol.top"
+  ]
+}

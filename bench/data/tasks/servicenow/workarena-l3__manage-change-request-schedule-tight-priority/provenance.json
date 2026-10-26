@@ -1,0 +1,14 @@
+{
+  "source": "WorkArena++",
+  "source_id": "workarena-l3__manage-change-request-schedule-tight-priority",
+  "end_version_commit": "e885130962f6",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "source_revision": "e885130962f6",
+    "runtime_status": "not_verified",
+    "limitations": [
+      "Requires managed instance, exact configured generated task, preserved episode and trusted validator receipt."
+    ]
+  }
+}

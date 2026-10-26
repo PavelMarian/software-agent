@@ -1,0 +1,16 @@
+{
+  "source": "MDArena",
+  "source_id": "20_fep_abfe_dhdl_analysis",
+  "end_version_commit": "d1d789d92a9935e716182e31d99393edcd4ac7d6",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "upstream": "https://github.com/openmm/MDArena",
+    "revision": "d1d789d92a9935e716182e31d99393edcd4ac7d6",
+    "source_hashes": {
+      "instruction.md": "5933cf98ec5c80d8297cd889f3f6692373ffc49716ce45f254e2aee41cd7771d",
+      "task.toml": "bafec712bca949f9b83c8ec43f4e789f549dc36e21bf2199ae610857d9173d19",
+      "checks.py": "b8fb66a1bbd84bbb3bf9fdb69abca77cf3b31db491c409e35ea77d741aea00bd"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "required_paths": [
+    "project.godot",
+    "demo_outputs/*.json"
+  ]
+}

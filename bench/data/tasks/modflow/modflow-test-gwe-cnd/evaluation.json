@@ -1,0 +1,46 @@
+{
+  "FAIL_TO_PASS": [],
+  "PASS_TO_PASS": [],
+  "additional_oracles": [],
+  "backend_hint": null,
+  "checks": [
+    {
+      "id": "artifact_structure",
+      "required": true,
+      "weight": 0.2
+    },
+    {
+      "id": "native_validation",
+      "required": true,
+      "weight": 0.3
+    },
+    {
+      "id": "semantic_correctness",
+      "required": true,
+      "weight": 0.5
+    }
+  ],
+  "evaluator_assets": "evaluator",
+  "strategy": "command_checks",
+  "submission_kind": "artifact_bundle",
+  "submission_root": "output",
+  "test_commands": [
+    {
+      "command": [
+        "python",
+        ".benchmark/application_evaluator.py",
+        "--profile",
+        "modflow",
+        "--submission",
+        ".",
+        "--validation",
+        ".benchmark/spec/validation.json"
+      ],
+      "id": "application-validator",
+      "parser": "json-status",
+      "shell": false,
+      "timeout_seconds": 1800.0
+    }
+  ],
+  "test_patch": ""
+}

@@ -1,0 +1,318 @@
+import contextlib
+import json
+import logging
+import os
+import time
+from typing import Any
+
+import litellm
+import openai
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_litellm import ChatLiteLLM
+from requests.exceptions import HTTPError
+
+from llm_backend.trim_util import trim_messages_conservative
+from llm_backend.usage_log import record_usage
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+LLM_QUERY_MAX_RETRIES = int(os.getenv("LLM_QUERY_MAX_RETRIES", "5"))
+LLM_QUERY_INIT_RETRY_DELAY = int(os.getenv("LLM_QUERY_INIT_RETRY_DELAY", "1"))
+
+
+class LiteLLMBackend:
+    def __init__(
+        self,
+        model_name: str,
+        api_key: str | None = None,
+        api_base: str | None = None,
+        top_p: float = 0.95,
+        temperature: float = 0.0,
+        max_tokens: int | None = None,
+        provider: str | None = None,
+        usage_available: bool = True,
+        retry: bool = True,
+    ):
+        self.model_name = model_name
+        self.api_key = api_key
+        self.api_base = api_base
+        self.provider = provider
+        self.usage_available = usage_available
+        self.retry = retry
+        self.temperature = temperature
+        self.top_p = top_p
+        self.max_tokens = max_tokens
+        litellm.drop_params = True
+        litellm.modify_params = True
+
+    def _uses_anthropic_cache_control(self) -> bool:
+        """Whether to inject ``cache_control`` breakpoints (Anthropic-only).
+
+        Matches Claude/Anthropic/Bedrock-Claude model ids, plus any model routed
+        through an Anthropic-compatible endpoint (e.g. Moonshot's ``/anthropic``).
+        Providers with automatic prefix caching (OpenAI, Gemini, DeepSeek, etc.)
+        need nothing and are excluded.
+        """
+        m = (self.model_name or "").lower()
+        if "anthropic" in m or "claude" in m:
+            return True
+        base = (self.api_base or "").lower()
+        return "anthropic" in base or base.endswith("/anthropic") or "/anthropic/" in base
+
+    def _invoke(self, llm, prompt_messages, usage_type: str) -> AIMessage:
+        request_start = time.perf_counter()
+        completion = llm.invoke(input=prompt_messages)
+        if self.usage_available:
+            record_usage(
+                completion,
+                model=self.model_name,
+                usage_type=usage_type,
+                duration_seconds=time.perf_counter() - request_start,
+            )
+        else:
+            # LiteLLM fills omitted usage with zeros; keep unmeasured usage absent.
+            completion.usage_metadata = None
+            completion.response_metadata.pop("token_usage", None)
+        return completion
+
+    def inference(
+        self,
+        messages: str | list[SystemMessage | HumanMessage | AIMessage],
+        system_prompt: str | None = None,
+        tools: list[any] | None = None,
+        usage_type: str = "trace",
+    ):
+        if isinstance(messages, str):
+            if system_prompt is None:
+                logger.info("No system prompt provided. Using default system prompt.")
+                system_prompt = "You are a helpful assistant."
+            prompt_messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=messages),
+            ]
+        elif isinstance(messages, list):
+            prompt_messages = messages
+            if len(messages) == 0:
+                logger.error("Empty messages list.")
+            elif isinstance(messages[0], HumanMessage):
+                logger.info("No system message provided.")
+                system_message = SystemMessage(content="You are a helpful assistant.")
+                if system_prompt is None:
+                    logger.warning("No system prompt provided. Using default system prompt.")
+                else:
+                    system_message.content = system_prompt
+                prompt_messages.insert(0, system_message)
+        else:
+            raise ValueError(f"messages must be either a string or a list of dicts, but got {type(messages)}")
+
+        model_config = {"model": self.model_name}
+        if self.temperature is not None:
+            model_config["temperature"] = self.temperature
+        if self.top_p is not None:
+            model_config["top_p"] = self.top_p
+        if self.api_key is not None:
+            model_config["api_key"] = self.api_key
+        if self.api_base is not None:
+            model_config["api_base"] = self.api_base
+        if self.provider is not None:
+            model_config["custom_llm_provider"] = self.provider
+        if self.max_tokens is not None:
+            model_config["max_tokens"] = self.max_tokens
+
+        # Anthropic prompt caching (rolling: system prefix + last message).
+        # Nested under model_kwargs; ignored for non-Anthropic via drop_params.
+        if self._uses_anthropic_cache_control():
+            model_config["model_kwargs"] = {
+                "cache_control_injection_points": [
+                    {"location": "message", "role": "system"},
+                    {"location": "message", "index": -1},
+                ]
+            }
+
+        if not self.retry:
+            model_config["max_retries"] = 0
+            model_config.setdefault("model_kwargs", {})["num_retries"] = 0
+        llm = ChatLiteLLM(**model_config)
+
+        if tools:
+            llm = llm.bind_tools(tools, tool_choice="auto")
+
+        if not self.retry:
+            return self._invoke(llm, prompt_messages, usage_type)
+
+        retry_delay = LLM_QUERY_INIT_RETRY_DELAY
+        trim_message = False
+
+        for attempt in range(LLM_QUERY_MAX_RETRIES):
+            try:
+                if trim_message:
+                    new_prompt_messages, trim_sum = trim_messages_conservative(prompt_messages)
+                    logger.info(f"Trimming the {trim_sum}/{len(prompt_messages)} messages")
+                    prompt_messages = new_prompt_messages
+                return self._invoke(llm, prompt_messages, usage_type)
+            except openai.BadRequestError as e:
+                logger.error(f"Bad request error - request is malformed: {e}")
+                logger.error(f"Error details: {_safe_response_details(e)}")
+                logger.error("This often happens when tool_calls don't have matching tool response messages.")
+                logger.error(
+                    f"Last few messages: {prompt_messages[-3:] if len(prompt_messages) >= 3 else prompt_messages}"
+                )
+                raise
+            except (openai.RateLimitError, HTTPError):
+                logger.warning(
+                    f"Rate-limited. Retrying in {retry_delay} seconds... (Attempt {attempt + 1}/{LLM_QUERY_MAX_RETRIES})"
+                )
+                time.sleep(retry_delay)
+                retry_delay *= 2
+            except openai.APIError as e:
+                logger.warning(
+                    f"OpenAI API error occurred: {e}. Retrying in {retry_delay} seconds... (Attempt {attempt + 1}/{LLM_QUERY_MAX_RETRIES})"
+                )
+                time.sleep(retry_delay)
+                retry_delay *= 2
+
+            except litellm.RateLimitError as e:
+                provider_delay = _extract_retry_delay_seconds_from_exception(e)
+                if provider_delay is not None and provider_delay > 0:
+                    logger.warning(
+                        f"Rate-limited by provider. Retrying in {provider_delay} seconds... (Attempt {attempt + 1}/{LLM_QUERY_MAX_RETRIES})"
+                    )
+                    time.sleep(provider_delay)
+                else:
+                    logger.warning(
+                        f"Rate-limited. Retrying in {retry_delay} seconds... (Attempt {attempt + 1}/{LLM_QUERY_MAX_RETRIES})"
+                    )
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+
+                trim_message = True
+            except litellm.ServiceUnavailableError:
+                logger.warning(
+                    f"Service unavailable (mostly 503). Retrying in 60 seconds... (Attempt {attempt + 1}/{LLM_QUERY_MAX_RETRIES})"
+                )
+                time.sleep(60)
+                trim_message = True
+            except IndexError as e:
+                logger.warning(
+                    f"IndexError occurred on Gemini Server Side: {e}, keep calm for a while... {attempt + 1}/{LLM_QUERY_MAX_RETRIES}"
+                )
+                trim_message = True
+                time.sleep(30)
+                if attempt == LLM_QUERY_MAX_RETRIES - 1:
+                    logger.error("Max retries exceeded due to index error. Unable to complete the request.")
+                    return AIMessage(content="Server side error")
+            except Exception as e:
+                logger.error(f"An unexpected error occurred: {e}")
+                raise
+
+        raise RuntimeError("Max retries exceeded. Unable to complete the request.")
+
+
+def _safe_response_details(exc: BaseException) -> str:
+    response = getattr(exc, "response", None)
+    if response is None:
+        return "No response details"
+    try:
+        return str(response.json())
+    except Exception:
+        pass
+    try:
+        text = getattr(response, "text", None)
+        if text:
+            return str(text)
+    except Exception:
+        pass
+    return "No response details"
+
+
+def _parse_duration_to_seconds(duration: Any) -> float | None:
+    if duration is None:
+        return None
+    if isinstance(duration, (int, float)):
+        return float(duration)
+    if isinstance(duration, str):
+        val = duration.strip().lower()
+        if val.endswith("s"):
+            try:
+                return float(val[:-1])
+            except ValueError:
+                return None
+        return None
+    if isinstance(duration, dict):
+        seconds = duration.get("seconds")
+        nanos = duration.get("nanos", 0)
+        if isinstance(seconds, (int, float)):
+            return float(seconds) + (float(nanos) / 1_000_000_000.0)
+    return None
+
+
+def _extract_retry_delay_seconds_from_exception(exc: BaseException) -> float | None:
+    candidates: list[Any] = []
+
+    print(f"exc: {exc}")
+
+    response = getattr(exc, "response", None)
+    if response is not None:
+        try:
+            if hasattr(response, "json"):
+                candidates.append(response.json())
+        except Exception:
+            pass
+        try:
+            text = getattr(response, "text", None)
+            if isinstance(text, (str, bytes)):
+                candidates.append(json.loads(text))
+        except Exception:
+            pass
+
+    for attr in ("body", "message", "content"):
+        try:
+            val = getattr(exc, attr, None)
+            if isinstance(val, (dict, list)):
+                candidates.append(val)
+            elif isinstance(val, (str, bytes)):
+                candidates.append(json.loads(val))
+        except Exception:
+            pass
+
+    try:
+        for arg in getattr(exc, "args", []) or []:
+            if isinstance(arg, (dict, list)):
+                candidates.append(arg)
+            elif isinstance(arg, (str, bytes)):
+                with contextlib.suppress(Exception):
+                    candidates.append(json.loads(arg))
+    except Exception:
+        pass
+
+    def find_retry_delay(data: Any) -> float | None:
+        if data is None:
+            return None
+        if isinstance(data, dict):
+            if "error" in data:
+                found = find_retry_delay(data.get("error"))
+                if found is not None:
+                    return found
+            details = data.get("details")
+            if isinstance(details, list):
+                for item in details:
+                    if isinstance(item, dict):
+                        type_url = item.get("@type") or item.get("type")
+                        if type_url and "google.rpc.RetryInfo" in type_url:
+                            parsed = _parse_duration_to_seconds(item.get("retryDelay"))
+                            if parsed is not None:
+                                return parsed
+        elif isinstance(data, list):
+            for v in data:
+                found = find_retry_delay(v)
+                if found is not None:
+                    return found
+        return None
+
+    for cand in candidates:
+        delay = find_retry_delay(cand)
+        if delay is not None:
+            return delay
+
+    return 60.0

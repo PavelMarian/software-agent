@@ -1,0 +1,14 @@
+{
+  "source": "CADWorld",
+  "source_id": "freecad-cam-014",
+  "end_version_commit": "e5d0ebab8bd2",
+  "gold_patch": "",
+  "prs": [],
+  "metadata": {
+    "source_revision": "e5d0ebab8bd2",
+    "runtime_status": "not_verified",
+    "limitations": [
+      "Requires FreeCAD console and CAM workbench; original VM paths need runner mapping; native execution not verified."
+    ]
+  }
+}

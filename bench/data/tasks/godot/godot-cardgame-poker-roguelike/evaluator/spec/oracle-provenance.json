@@ -1,0 +1,7 @@
+{
+  "policy": "prefer the originating benchmark oracle; adaptations may only bridge TaskBundle paths or replace unavailable GUI fixtures with native semantic invariants",
+  "upstream": "GameCraft-Bench",
+  "source": "tasks/cardgame-poker-roguelike/tests/rubric.json and gamecraft_bench.verifier",
+  "reuse": "upstream verifier code and rubric; only the project path is adapted",
+  "pass_threshold": 0.5
+}

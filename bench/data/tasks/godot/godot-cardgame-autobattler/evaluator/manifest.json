@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "task_id": "godot-cardgame-autobattler",
+  "entrypoints": {
+    "test_commands": [
+      {
+        "command": [
+          "python",
+          ".benchmark/application_evaluator.py",
+          "--profile",
+          "godot",
+          "--submission",
+          ".",
+          "--validation",
+          ".benchmark/spec/validation.json"
+        ],
+        "id": "application-validator",
+        "parser": "json-status",
+        "shell": false,
+        "timeout_seconds": 1800.0
+      }
+    ],
+    "additional_oracles": [
+      {
+        "id": "gamecraft-upstream-verifier",
+        "layer": "system",
+        "command": [
+          "python",
+          ".benchmark/gamecraft_source_oracle.py",
+          "--rubric",
+          ".benchmark/spec/upstream-rubric.json",
+          "--source-package",
+          ".benchmark/source",
+          "--submission",
+          ".",
+          "--threshold",
+          "0.5"
+        ],
+        "timeout_seconds": 1800.0,
+        "required": true,
+        "weight": 1.0
+      }
+    ]
+  },
+  "layout": {
+    "spec": "declarative task-specific evaluator configuration",
+    "reference": "hidden deterministic reference assets when available",
+    "upstream": "vendored upstream verifier code or evaluation suite"
+  },
+  "layers": [
+    {
+      "id": "command",
+      "checks": [
+        "artifact_structure",
+        "native_validation"
+      ],
+      "implementation": [
+        "python",
+        ".benchmark/application_evaluator.py",
+        "--profile",
+        "godot",
+        "--submission",
+        ".",
+        "--validation",
+        ".benchmark/spec/validation.json"
+      ]
+    },
+    {
+      "id": "system",
+      "oracles": [
+        "gamecraft-upstream-verifier"
+      ]
+    }
+  ],
+  "readiness": "runtime_verification_required",
+  "limitations": []
+}

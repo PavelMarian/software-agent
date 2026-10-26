@@ -1,0 +1,11 @@
+{
+  "content_assertions": [
+    {
+      "path": "model.lst",
+      "regex": "Normal termination of simulation"
+    }
+  ],
+  "required_paths": [
+    "model.lst"
+  ]
+}
